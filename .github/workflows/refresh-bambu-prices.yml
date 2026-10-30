@@ -1,0 +1,25 @@
+name: Refresh Bambu US filament prices
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 12 * * *'
+permissions:
+  contents: write
+jobs:
+  prices:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read official Bambu US spool prices
+        run: python3 scripts/refresh_bambu_prices.py
+      - name: Publish verified changes
+        run: |
+          if git diff --quiet -- bambu-prices.json; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bambu-prices.json
+          git commit -m "Refresh Bambu US filament prices"
+          git push

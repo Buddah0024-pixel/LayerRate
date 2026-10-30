@@ -1,6 +1,6 @@
 import json, urllib.request, datetime, pathlib
 BASE = "https://us.store.bambulab.com"
-PRODUCTS = {"pla": ["pla-basic"], "petg": ["petg-hf", "petg-basic"], "silk": ["pla-silk-plus", "pla-silk"], "tpu": ["tpu-for-ams", "tpu-95a-hf"]}
+PRODUCTS = {"pla": ["pla-basic", "pla-basic-filament"], "petg": ["petg-hf", "petg-hf-filament", "petg-basic"], "silk": ["pla-silk-plus", "pla-silk", "pla-silk-filament"], "tpu": ["tpu-for-ams", "tpu-95a-hf"]}
 def lookup(handle):
     data = None
     errors = []

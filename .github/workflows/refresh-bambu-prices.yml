@@ -1,6 +1,10 @@
 name: Refresh Bambu US filament prices
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/refresh_bambu_prices.py'
+      - '.github/workflows/refresh-bambu-prices.yml'
   schedule:
     - cron: '23 12 * * *'
 permissions:

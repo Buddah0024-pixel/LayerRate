@@ -117,8 +117,10 @@
                 </div>
             </div>
 
-            <div class="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-1 sm:gap-3">
-                <button type="button" onclick="if(window.LayerRateAndroid){window.LayerRateAndroid.checkForUpdates()}else{alert('Update checks are available in the Android app')}" title="Check for LayerRate updates" class="text-xs font-semibold px-2 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center transition whitespace-nowrap" aria-label="Check for updates">Check Update</button>
+            <div class="w-full sm:w-auto flex flex-col gap-2 sm:gap-1">
+                <div class="flex justify-end"><button type="button" onclick="if(window.LayerRateAndroid){window.LayerRateAndroid.checkForUpdates()}else{alert('Update checks are available in the Android app')}" title="Check for LayerRate updates" class="text-xs font-semibold px-2 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center transition whitespace-nowrap" aria-label="Check for updates">Check Update</button></div>
+                <div class="w-full flex items-center justify-between sm:justify-end gap-1 sm:gap-3">
+                
                 <button onclick="resetToDefaults()" title="Reset all values to defaults" class="text-xs font-medium px-2 sm:px-3 py-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition flex items-center gap-1.5">
                     <i class="ph-bold ph-arrow-counter-clockwise text-sm"></i>
                     <span class="hidden sm:inline">Reset</span>
@@ -131,6 +133,7 @@
                 <button onclick="toggleTheme()" aria-label="Toggle Light/Dark Mode" class="w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center transition">
                     <i id="theme-icon" class="ph-bold ph-sun text-lg text-amber-400"></i>
                 </button>
+                </div>
             </div>
         </div>
     </header>
@@ -250,16 +253,21 @@
                                     <button type="button" onclick="adjustTime(15)" class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition">+15m</button>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="flex items-baseline border-r border-zinc-200 dark:border-zinc-800 pr-2">
-                                    <input type="number" id="input-hours" value="4" min="0" step="1" oninput="calculateAll()"
-                                        class="w-full bg-transparent font-mono text-3xl font-bold text-zinc-900 dark:text-white focus:outline-none">
-                                    <span class="font-mono text-sm font-semibold text-zinc-400">hr</span>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="flex items-baseline border-r border-zinc-200 dark:border-zinc-800 pr-1">
+                                    <input type="number" id="input-days" value="0" min="0" step="1" oninput="calculateAll()"
+                                        class="w-full min-w-0 bg-transparent font-mono text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white focus:outline-none">
+                                    <span class="font-mono text-xs font-semibold text-zinc-400">day</span>
                                 </div>
-                                <div class="flex items-baseline pl-1">
+                                <div class="flex items-baseline border-r border-zinc-200 dark:border-zinc-800 pr-1">
+                                    <input type="number" id="input-hours" value="4" min="0" step="1" oninput="calculateAll()"
+                                        class="w-full min-w-0 bg-transparent font-mono text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white focus:outline-none">
+                                    <span class="font-mono text-xs font-semibold text-zinc-400">hr</span>
+                                </div>
+                                <div class="flex items-baseline">
                                     <input type="number" id="input-minutes" value="30" min="0" max="59" step="1" oninput="calculateAll()"
-                                        class="w-full bg-transparent font-mono text-3xl font-bold text-zinc-900 dark:text-white focus:outline-none">
-                                    <span class="font-mono text-sm font-semibold text-zinc-400">min</span>
+                                        class="w-full min-w-0 bg-transparent font-mono text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white focus:outline-none">
+                                    <span class="font-mono text-xs font-semibold text-zinc-400">min</span>
                                 </div>
                             </div>
                             <p class="text-[11px] text-zinc-400 mt-1">Total machine run time from slicer</p>
@@ -731,6 +739,20 @@
             }
         }
 
+        // Select existing numbers on tap/focus so typing replaces the value.
+        document.addEventListener('focusin', (event) => {
+            const field = event.target;
+            if (field.matches && field.matches('input[type="number"]')) {
+                try { field.select(); } catch (e) {}
+            }
+        });
+        document.addEventListener('click', (event) => {
+            const field = event.target;
+            if (field.matches && field.matches('input[type="number"]')) {
+                try { field.select(); } catch (e) {}
+            }
+        });
+
         // --- Quick Stepper & Input Sync Helpers ---
         function adjustValue(inputId, delta) {
             const el = document.getElementById(inputId);
@@ -748,9 +770,11 @@
         function adjustTime(addMinutes) {
             const hrsEl = document.getElementById('input-hours');
             const minsEl = document.getElementById('input-minutes');
-            let totalMins = (parseInt(hrsEl.value) || 0) * 60 + (parseInt(minsEl.value) || 0) + addMinutes;
+            const daysEl = document.getElementById('input-days');
+            let totalMins = (parseInt(daysEl.value) || 0) * 1440 + (parseInt(hrsEl.value) || 0) * 60 + (parseInt(minsEl.value) || 0) + addMinutes;
             totalMins = Math.max(0, totalMins);
-            hrsEl.value = Math.floor(totalMins / 60);
+            daysEl.value = Math.floor(totalMins / 1440);
+            hrsEl.value = Math.floor((totalMins % 1440) / 60);
             minsEl.value = totalMins % 60;
             calculateAll();
         }
@@ -813,6 +837,7 @@
         function calculateAll() {
             // 1. Read Primary Inputs
             const grams = Math.max(0, parseFloat(document.getElementById('input-grams').value) || 0);
+            const days = Math.max(0, parseFloat(document.getElementById('input-days').value) || 0);
             const hours = Math.max(0, parseFloat(document.getElementById('input-hours').value) || 0);
             const minutes = Math.max(0, parseFloat(document.getElementById('input-minutes').value) || 0);
             const laborMins = Math.max(0, parseFloat(document.getElementById('input-labor-mins').value) || 0);
@@ -832,7 +857,7 @@
             document.getElementById('display-markup-pct').textContent = `+${markupPercent}% Markup`;
 
             // 3. Per-Unit Cost Math
-            const totalPrintHours = hours + (minutes / 60);
+            const totalPrintHours = (days * 24) + hours + (minutes / 60);
             const failureMultiplier = 1 + (failurePct / 100);
 
             const rawFilamentCost = (grams / 1000) * spoolCost;
@@ -875,6 +900,7 @@
             latestCalculation = {
                 projectName: document.getElementById('project-name').value.trim() || 'Custom 3D Print',
                 grams,
+                days,
                 hours,
                 minutes,
                 totalPrintHours,
@@ -960,6 +986,7 @@
         function resetToDefaults() {
             document.getElementById('project-name').value = '';
             document.getElementById('input-grams').value = 120;
+            document.getElementById('input-days').value = 0;
             document.getElementById('input-hours').value = 4;
             document.getElementById('input-minutes').value = 30;
             document.getElementById('input-labor-mins').value = 10;
@@ -989,7 +1016,7 @@
 
         function copyClientQuote() {
             const c = latestCalculation;
-            const timeStr = `${c.hours > 0 ? c.hours + 'h ' : ''}${c.minutes}m`;
+            const timeStr = `${c.days ? c.days + 'd ' : ''}${c.hours > 0 ? c.hours + 'h ' : ''}${c.minutes}m`;
             const lines = [
                 `3D PRINT QUOTE — ${c.projectName}`,
                 `----------------------------------------`,
@@ -1008,7 +1035,7 @@
             const c = latestCalculation;
             const lines = [
                 `[INTERNAL COST BREAKDOWN] — ${c.projectName}`,
-                `Qty: ${c.qty} | Weight: ${c.grams}g/ea | Print Time: ${c.hours}h ${c.minutes}m/ea`,
+                `Qty: ${c.qty} | Weight: ${c.grams}g/ea | Print Time: ${c.days || 0}d ${c.hours}h ${c.minutes}m/ea`,
                 `Rates: $${c.spoolCost}/kg spool | $${c.machineRate}/hr printer | ${c.multiplier}x mult`,
                 `----------------------------------------`,
                 `Material (+${c.failurePct}% buffer): ${formatCurrency(c.totalMaterial)}`,
@@ -1058,6 +1085,7 @@
 
             document.getElementById('project-name').value = found.projectName === 'Custom 3D Print' ? '' : found.projectName;
             document.getElementById('input-grams').value = found.grams;
+            document.getElementById('input-days').value = found.days || 0;
             document.getElementById('input-hours').value = found.hours;
             document.getElementById('input-minutes').value = found.minutes;
             document.getElementById('input-labor-mins').value = found.laborMins;
@@ -1121,7 +1149,7 @@
                         <span class="text-[11px] font-mono text-zinc-400">${q.timestamp} • ${q.multiplier}x mult</span>
                     </td>
                     <td class="py-3 px-3 font-mono text-xs text-zinc-600 dark:text-zinc-300">
-                        ${q.grams}g • ${q.hours}h ${q.minutes}m
+                        ${q.grams}g • ${q.days || 0}d ${q.hours}h ${q.minutes}m
                     </td>
                     <td class="py-3 px-3 font-mono text-xs">${q.qty}x</td>
                     <td class="py-3 px-3 font-mono text-xs text-zinc-500">${formatCurrency(q.totalHardCost)}</td>

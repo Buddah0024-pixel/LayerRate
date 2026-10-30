@@ -14,32 +14,17 @@ import java.io.*;
 
 public class MainActivity extends Activity {
   WebView web;
-  TextView status;
+
   String pendingUrl;
   @Override public void onCreate(Bundle b) {
     super.onCreate(b);
-    LinearLayout layout = new LinearLayout(this);
-    layout.setOrientation(LinearLayout.VERTICAL);
-    layout.setBackgroundColor(Color.WHITE);
-    LinearLayout bar = new LinearLayout(this);
-    bar.setPadding(12,8,12,8);
-    TextView title = new TextView(this); title.setText("LayerRate"); title.setTextSize(20);
-    title.setTextColor(Color.BLACK);
-    bar.addView(title,new LinearLayout.LayoutParams(0,-2,1));
-    Button check = new Button(this); check.setText("Check for updates");
-    check.setOnClickListener(v -> checkUpdates(true));
-    bar.addView(check);
-    layout.addView(bar);
-    status = new TextView(this);
-    status.setTextColor(Color.DKGRAY); status.setPadding(12,0,12,4);
-    layout.addView(status);
     web = new WebView(this);
     web.getSettings().setJavaScriptEnabled(true);
     web.getSettings().setDomStorageEnabled(true);
     web.setWebViewClient(new WebViewClient());
+    web.addJavascriptInterface(new Object() { @JavascriptInterface public void checkForUpdates() { runOnUiThread(() -> checkUpdates(true)); } }, "LayerRateAndroid");
     web.loadUrl("file:///android_asset/index.html");
-    layout.addView(web,new LinearLayout.LayoutParams(-1,0,1));
-    setContentView(layout);
+    setContentView(web);
     checkUpdates(false);
   }
   void checkUpdates(boolean manual) {
@@ -47,7 +32,7 @@ public class MainActivity extends Activity {
       if(manual) new AlertDialog.Builder(this).setMessage("Update server not configured yet.").setPositiveButton("OK",null).show();
       return;
     }
-    status.setText("Checking for updates...");
+
     new Thread(() -> {
       try {
         URL url = new URL(BuildConfig.UPDATE_MANIFEST_URL);
@@ -66,7 +51,7 @@ public class MainActivity extends Activity {
         String notes=data.optString("notes","Bug fixes and improvements");
         if(!apk.startsWith("https://")) throw new Exception("APK must use HTTPS");
         runOnUiThread(() -> {
-          status.setText("");
+
           if(version>BuildConfig.VERSION_CODE) {
             new AlertDialog.Builder(this).setTitle("LayerRate update available")
               .setMessage("Version "+data.optString("versionName","new")+"\n\n"+notes)
@@ -76,7 +61,7 @@ public class MainActivity extends Activity {
         });
       } catch(Exception e) {
         runOnUiThread(() -> {
-          status.setText("");
+
           if(manual) new AlertDialog.Builder(this).setMessage("Unable to check for updates: "+e.getMessage()).setPositiveButton("OK",null).show();
         });
       }

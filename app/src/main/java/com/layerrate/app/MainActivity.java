@@ -17,7 +17,18 @@ public class MainActivity extends Activity {
 
   String pendingUrl;
   @Override public void onCreate(Bundle b) {
-    super.onCreate(b);
+    super.onCreate(b);if (Build.VERSION.SDK_INT >= 35) {
+    getWindow().setStatusBarContrastEnforced(false);
+    getWindow().setNavigationBarContrastEnforced(false);
+}
+
+getWindow().getDecorView().setOnApplyWindowInsetsListener((view, insets) -> {
+    android.graphics.Insets bars = insets.getInsets(
+        WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars()
+    );
+    view.setPadding(0, bars.top, 0, bars.bottom);
+    return insets;
+});
     web = new WebView(this);
     web.getSettings().setJavaScriptEnabled(true);
     web.getSettings().setDomStorageEnabled(true);

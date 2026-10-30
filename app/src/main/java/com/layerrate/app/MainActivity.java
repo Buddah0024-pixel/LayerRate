@@ -14,6 +14,22 @@ import java.io.*;
 
 public class MainActivity extends Activity {
   WebView web;
+  private ValueCallback<Uri[]> photoCallback;
+  private Uri cameraPhotoUri;
+  private static final int PHOTO_REQUEST = 4242;
+  @Override protected void onActivityResult(int requestCode,int resultCode,Intent data) {
+    super.onActivityResult(requestCode,resultCode,data);
+    if(requestCode != PHOTO_REQUEST || photoCallback == null) return;
+    Uri[] results = null;
+    if(resultCode == RESULT_OK) {
+      if(data != null && data.getData() != null) results = new Uri[]{data.getData()};
+      else if(cameraPhotoUri != null) results = new Uri[]{cameraPhotoUri};
+    }
+    photoCallback.onReceiveValue(results);
+    photoCallback = null;
+    cameraPhotoUri = null;
+  }
+
 
   String pendingUrl;
   boolean updateAvailable = false;
@@ -47,6 +63,31 @@ getWindow().getDecorView().setOnApplyWindowInsetsListener((view, insets) -> {
     web = new WebView(this);
     web.getSettings().setJavaScriptEnabled(true);
     web.getSettings().setDomStorageEnabled(true);
+    web.setWebChromeClient(new WebChromeClient() {
+      @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+        if(photoCallback != null) photoCallback.onReceiveValue(null);
+        photoCallback = callback;
+        cameraPhotoUri = null;
+        Intent gallery = new Intent(Intent.ACTION_GET_CONTENT);
+        gallery.addCategory(Intent.CATEGORY_OPENABLE);
+        gallery.setType("image/*");
+        Intent chooser = Intent.createChooser(gallery,"Choose print photo");
+        try {
+          android.content.ContentValues values = new android.content.ContentValues();
+          values.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME,"LayerRate_"+System.currentTimeMillis()+".jpg");
+          values.put(android.provider.MediaStore.Images.Media.MIME_TYPE,"image/jpeg");
+          cameraPhotoUri = getContentResolver().insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values);
+          if(cameraPhotoUri != null) {
+            Intent camera = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+            camera.putExtra(android.provider.MediaStore.EXTRA_OUTPUT,cameraPhotoUri);
+            camera.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS,new Intent[]{camera});
+          }
+        } catch(Exception ignored) { cameraPhotoUri = null; }
+        try { startActivityForResult(chooser,PHOTO_REQUEST); return true; }
+        catch(Exception e) { photoCallback.onReceiveValue(null); photoCallback=null; return false; }
+      }
+    });
     web.setWebViewClient(new WebViewClient() {
       @Override public void onPageFinished(WebView view, String url) {
         showUpdateStatus(updateAvailable);

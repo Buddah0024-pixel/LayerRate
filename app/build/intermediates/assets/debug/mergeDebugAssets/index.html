@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LayerRate | 3D Print Pricing Calculator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        bambu: {
+                            400: '#2ae06b',
+                            500: '#00ae42',
+                            600: '#008c35',
+                        },
+                        prusa: {
+                            400: '#ff8533',
+                            500: '#fa6831',
+                            600: '#d9531e',
+                        },
+                        carbon: {
+                            800: '#18181b',
+                            900: '#121215',
+                            950: '#0b0b0e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Range Slider Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 8px;
+            border-radius: 999px;
+            background: #27272a;
+        }
+        html:not(.dark) input[type="range"]::-webkit-slider-runnable-track {
+            background: #e4e4e7;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -6px;
+            background-color: #00ae42;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.12);
+            background-color: #2ae06b;
+        }
+        /* Remove number input spinners for cleaner UI */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        /* Subtle 3D buildplate grid background */
+        .buildplate-bg {
+            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+        html:not(.dark) .buildplate-bg {
+            background-image: 
+                linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="bg-zinc-50 dark:bg-carbon-950 text-zinc-900 dark:text-zinc-100 font-sans min-h-screen buildplate-bg transition-colors duration-200 pb-16">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-30 backdrop-blur-md bg-white/80 dark:bg-carbon-950/80 border-b border-zinc-200 dark:border-zinc-800/80">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-bambu-500 to-emerald-700 flex items-center justify-center text-white shadow-lg shadow-bambu-500/20">
+                    <i class="ph-bold ph-cube-focus text-2xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-extrabold text-lg tracking-tight leading-none">LayerRate</h1>
+                        <span class="text-[11px] font-mono uppercase px-2 py-0.5 rounded-full bg-bambu-500/15 text-bambu-600 dark:text-bambu-400 font-semibold border border-bambu-500/30">PRO</span>
+                    </div>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400">3D Print Pricing & Profit Engine</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="resetToDefaults()" title="Reset all values to defaults" class="text-xs font-medium px-3 py-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition flex items-center gap-1.5">
+                    <i class="ph-bold ph-arrow-counter-clockwise text-sm"></i>
+                    <span class="hidden sm:inline">Reset</span>
+                </button>
+                <a href="#saved-quotes-section" class="text-xs font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 transition flex items-center gap-1.5">
+                    <i class="ph-bold ph-bookmarks text-sm text-prusa-500"></i>
+                    <span>Saved</span>
+                    <span id="saved-count-badge" class="px-1.5 py-0.2 rounded-full bg-zinc-200 dark:bg-zinc-800 text-[11px] font-mono">0</span>
+                </a>
+                <button onclick="toggleTheme()" aria-label="Toggle Light/Dark Mode" class="w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center transition">
+                    <i id="theme-icon" class="ph-bold ph-sun text-lg text-amber-400"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+
+        <!-- 1. Quick Presets / Mode Selector -->
+        <section aria-label="Pricing Mode Presets">
+            <div class="flex items-center justify-between mb-2.5">
+                <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                    <i class="ph-bold ph-Sliders-horizontal text-bambu-500"></i>
+                    1. Select Pricing Mode
+                </span>
+                <span id="preset-status-hint" class="text-xs text-zinc-500 dark:text-zinc-400">Standard 2.0x multiplier + labor</span>
+            </div>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+                <!-- Friend / At-Cost -->
+                <button type="button" onclick="applyPricingPreset('friend')" id="preset-btn-friend" class="preset-card group text-left p-3.5 rounded-xl border transition-all duration-150 bg-white dark:bg-carbon-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold text-sm flex items-center gap-1.5">
+                            <i class="ph-fill ph-handshake text-sky-400 text-base"></i>
+                            Friend / At-Cost
+                        </span>
+                        <span class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-500 font-semibold">1.0x</span>
+                    </div>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">Covers spool, machine wear & 10% buffer. $0 markup.</p>
+                </button>
+
+                <!-- Standard Commission -->
+                <button type="button" onclick="applyPricingPreset('standard')" id="preset-btn-standard" class="preset-card group text-left p-3.5 rounded-xl border transition-all duration-150 bg-white dark:bg-carbon-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold text-sm flex items-center gap-1.5">
+                            <i class="ph-fill ph-check-circle text-bambu-500 text-base"></i>
+                            Standard Job
+                        </span>
+                        <span class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-bambu-500/15 text-bambu-500 font-semibold">2.0x</span>
+                    </div>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">Covers all costs + hands-on labor + 100% markup.</p>
+                </button>
+
+                <!-- Commercial / Etsy Retail -->
+                <button type="button" onclick="applyPricingPreset('commercial')" id="preset-btn-commercial" class="preset-card group text-left p-3.5 rounded-xl border transition-all duration-150 bg-white dark:bg-carbon-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold text-sm flex items-center gap-1.5">
+                            <i class="ph-fill ph-storefront text-prusa-500 text-base"></i>
+                            Etsy / Retail
+                        </span>
+                        <span class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-prusa-500/15 text-prusa-500 font-semibold">3.5x</span>
+                    </div>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">High margin for marketplace fees, ads & profit.</p>
+                </button>
+
+                <!-- Custom Mode -->
+                <button type="button" onclick="applyPricingPreset('custom')" id="preset-btn-custom" class="preset-card group text-left p-3.5 rounded-xl border transition-all duration-150 bg-white dark:bg-carbon-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold text-sm flex items-center gap-1.5">
+                            <i class="ph-fill ph-faders text-purple-400 text-base"></i>
+                            Custom Tuned
+                        </span>
+                        <span id="custom-badge-mult" class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 font-semibold">Auto</span>
+                    </div>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">Automatically activates when you tweak sliders.</p>
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Workspace Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- LEFT COLUMN: Inputs & Rates (7 cols on desktop) -->
+            <div class="lg:col-span-7 space-y-6">
+
+                <!-- 2. Primary Slicer Inputs Card -->
+                <div class="bg-white dark:bg-carbon-900 rounded-2xl border border-zinc-200 dark:border-zinc-800/90 p-5 sm:p-6 shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-5 pb-3 border-b border-zinc-100 dark:border-zinc-800/80">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-bambu-500 animate-pulse"></span>
+                            <h2 class="font-bold text-base sm:text-lg">2. Print Specs (From Slicer)</h2>
+                        </div>
+                        <!-- Optional Project Name for Quick Saving/Quotes -->
+                        <div class="flex items-center gap-2 flex-grow sm:flex-grow-0">
+                            <input type="text" id="project-name" placeholder="Part Name (e.g., Articulated Dragon)" 
+                                class="w-full sm:w-56 text-xs bg-zinc-100 dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 focus:outline-none focus:border-bambu-500 transition">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <!-- Filament Weight (Grams) -->
+                        <div class="bg-zinc-50 dark:bg-carbon-950/60 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 focus-within:border-bambu-500 dark:focus-within:border-bambu-500 transition">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label for="input-grams" class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                                    <i class="ph-bold ph-scales text-bambu-500 text-sm"></i>
+                                    Filament Used
+                                </label>
+                                <div class="flex gap-1">
+                                    <button type="button" onclick="adjustValue('input-grams', -10)" class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition">-10g</button>
+                                    <button type="button" onclick="adjustValue('input-grams', 25)" class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition">+25g</button>
+                                </div>
+                            </div>
+                            <div class="relative flex items-baseline">
+                                <input type="number" id="input-grams" value="120" min="0" step="1" oninput="calculateAll()"
+                                    class="w-full bg-transparent font-mono text-3xl font-bold text-zinc-900 dark:text-white focus:outline-none">
+                                <span class="font-mono text-sm font-semibold text-zinc-400 ml-2">grams</span>
+                            </div>
+                            <p class="text-[11px] text-zinc-400 mt-1">Total weight including supports & purge tower</p>
+                        </div>
+
+                        <!-- Print Duration (Hours & Minutes) -->
+                        <div class="bg-zinc-50 dark:bg-carbon-950/60 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 focus-within:border-bambu-500 dark:focus-within:border-bambu-500 transition">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label for="input-hours" class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                                    <i class="ph-bold ph-timer text-prusa-500 text-sm"></i>
+                                    Print Time
+                                </label>
+                                <div class="flex gap-1">
+                                    <button type="button" onclick="adjustTime(60)" class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition">+1h</button>
+                                    <button type="button" onclick="adjustTime(15)" class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition">+15m</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="flex items-baseline border-r border-zinc-200 dark:border-zinc-800 pr-2">
+                                    <input type="number" id="input-hours" value="4" min="0" step="1" oninput="calculateAll()"
+                                        class="w-full bg-transparent font-mono text-3xl font-bold text-zinc-900 dark:text-white focus:outline-none">
+                                    <span class="font-mono text-sm font-semibold text-zinc-400">hr</span>
+                                </div>
+                                <div class="flex items-baseline pl-1">
+                                    <input type="number" id="input-minutes" value="30" min="0" max="59" step="1" oninput="calculateAll()"
+                                        class="w-full bg-transparent font-mono text-3xl font-bold text-zinc-900 dark:text-white focus:outline-none">
+                                    <span class="font-mono text-sm font-semibold text-zinc-400">min</span>
+                                </div>
+                            </div>
+                            <p class="text-[11px] text-zinc-400 mt-1">Total machine run time from slicer</p>
+                        </div>
+
+                        <!-- Hands-On Labor / Post-Processing -->
+                        <div class="bg-zinc-50 dark:bg-carbon-950/60 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 focus-within:border-bambu-500 dark:focus-within:border-bambu-500 transition">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label for="input-labor-mins" class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                                    <i class="ph-bold ph-hand-wrench text-amber-400 text-sm"></i>
+                                    Prep & Post-Processing
+                                </label>
+                                <div class="flex gap-1">
+                                    <button type="button" onclick="setExactValue('input-labor-mins', 0)" class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition">0m</button>
+                                    <button type="button" onclick="adjustValue('input-labor-mins', 5)" class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition">+5m</button>
+                                </div>
+                            </div>
+                            <div class="relative flex items-baseline">
+                                <input type="number" id="input-labor-mins" value="10" min="0" step="1" oninput="calculateAll()"
+                                    class="w-full bg-transparent font-mono text-2xl font-bold text-zinc-900 dark:text-white focus:outline-none">
+                                <span class="font-mono text-sm font-semibold text-zinc-400 ml-2">mins</span>
+                            </div>
+                            <p class="text-[11px] text-zinc-400 mt-1">Slicing, bed prep, support removal, gluing</p>
+                        </div>
+
+                        <!-- Extra Hardware & Batch Quantity Row -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- Extra Hardware -->
+                            <div class="bg-zinc-50 dark:bg-carbon-950/60 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 focus-within:border-bambu-500 dark:focus-within:border-bambu-500 transition">
+                                <label for="input-hardware" class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mb-1.5">
+                                    <i class="ph-bold ph-nut text-purple-400 text-sm"></i>
+                                    Extras / Box
+                                </label>
+                                <div class="relative flex items-baseline">
+                                    <span class="font-mono text-lg font-bold text-zinc-400 mr-1">$</span>
+                                    <input type="number" id="input-hardware" value="0.00" min="0" step="0.25" oninput="calculateAll()"
+                                        class="w-full bg-transparent font-mono text-2xl font-bold text-zinc-900 dark:text-white focus:outline-none">
+                                </div>
+                                <p class="text-[10px] text-zinc-400 mt-1">Magnets, inserts, box</p>
+                            </div>
+
+                            <!-- Batch Size / Quantity -->
+                            <div class="bg-zinc-50 dark:bg-carbon-950/60 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 focus-within:border-bambu-500 dark:focus-within:border-bambu-500 transition">
+                                <div class="flex justify-between items-center mb-1.5">
+                                    <label for="input-qty" class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                                        <i class="ph-bold ph-stack text-sky-400 text-sm"></i>
+                                        Qty
+                                    </label>
+                                    <div class="flex gap-1">
+                                        <button type="button" onclick="adjustQty(-1)" class="w-5 h-5 rounded bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 flex items-center justify-center text-xs font-bold">-</button>
+                                        <button type="button" onclick="adjustQty(1)" class="w-5 h-5 rounded bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 flex items-center justify-center text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                                <div class="relative flex items-baseline">
+                                    <input type="number" id="input-qty" value="1" min="1" step="1" oninput="calculateAll()"
+                                        class="w-full bg-transparent font-mono text-2xl font-bold text-zinc-900 dark:text-white focus:outline-none">
+                                    <span class="font-mono text-xs font-semibold text-zinc-400 ml-1">units</span>
+                                </div>
+                                <p class="text-[10px] text-zinc-400 mt-1">Multiplier for batch</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Smart Business Rates & Margins Card -->
+                <div class="bg-white dark:bg-carbon-900 rounded-2xl border border-zinc-200 dark:border-zinc-800/90 p-5 sm:p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-5 pb-3 border-b border-zinc-100 dark:border-zinc-800/80">
+                        <div class="flex items-center gap-2">
+                            <i class="ph-bold ph-sliders text-prusa-500 text-lg"></i>
+                            <h2 class="font-bold text-base sm:text-lg">3. Shop Rates & Profit Margin</h2>
+                        </div>
+                        <span class="text-xs text-zinc-500 dark:text-zinc-400">Smart defaults pre-loaded</span>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Profit Markup / Multiplier Slider (Hero Slider) -->
+                        <div class="p-4 rounded-xl bg-zinc-50 dark:bg-carbon-950/70 border border-zinc-200/80 dark:border-zinc-800">
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                <div>
+                                    <label for="slider-multiplier" class="text-sm font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-1.5">
+                                        Profit Multiplier (Markup)
+                                    </label>
+                                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Multiplies your base material & machine cost</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span id="display-markup-pct" class="text-xs font-mono px-2 py-1 rounded bg-bambu-500/15 text-bambu-600 dark:text-bambu-400 font-semibold">+100% Markup</span>
+                                    <div class="flex items-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2.5 py-1">
+                                        <input type="number" id="input-multiplier" value="2.0" min="1.0" max="6.0" step="0.1" oninput="syncMultiplierFromInput()"
+                                            class="w-12 bg-transparent font-mono text-sm font-bold text-right focus:outline-none text-bambu-500">
+                                        <span class="font-mono text-xs text-zinc-400 ml-0.5">x</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="range" id="slider-multiplier" min="1.0" max="4.0" step="0.05" value="2.0" oninput="syncMultiplierFromSlider()" class="w-full my-2">
+                            <div class="flex justify-between text-[11px] font-mono text-zinc-400">
+                                <span>1.0x (At-Cost)</span>
+                                <span>2.0x (Standard)</span>
+                                <span>3.0x (Retail)</span>
+                                <span>4.0x (High Margin)</span>
+                            </div>
+                        </div>
+
+                        <!-- Filament Spool Cost + Material Quick Buttons -->
+                        <div>
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                <label for="input-spool-cost" class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                                    Filament Spool Cost ($ / 1kg)
+                                </label>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <button type="button" onclick="setSpoolCost(15, this)" class="spool-chip text-xs font-mono px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800/70 hover:border-bambu-500 transition">$15 Bulk PLA</button>
+                                    <button type="button" onclick="setSpoolCost(20, this)" class="spool-chip text-xs font-mono px-2.5 py-1 rounded-lg border border-bambu-500/60 bg-bambu-500/10 text-bambu-500 font-semibold transition">$20 PLA+</button>
+                                    <button type="button" onclick="setSpoolCost(24, this)" class="spool-chip text-xs font-mono px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800/70 hover:border-bambu-500 transition">$24 PETG/Silk</button>
+                                    <button type="button" onclick="setSpoolCost(32, this)" class="spool-chip text-xs font-mono px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800/70 hover:border-bambu-500 transition">$32 ASA/CF</button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <input type="range" id="slider-spool-cost" min="8" max="60" step="1" value="20" oninput="syncPair('slider-spool-cost', 'input-spool-cost')" class="flex-grow">
+                                <div class="flex items-center bg-zinc-50 dark:bg-carbon-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-1.5 w-28 shrink-0">
+                                    <span class="font-mono text-sm text-zinc-400 mr-1">$</span>
+                                    <input type="number" id="input-spool-cost" value="20" min="1" step="1" oninput="syncPair('input-spool-cost', 'slider-spool-cost')" class="w-full bg-transparent font-mono text-sm font-bold focus:outline-none">
+                                    <span class="font-mono text-xs text-zinc-400">/kg</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3-Column Compact Shop Rates -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                            <!-- Printer Hourly Rate -->
+                            <div class="p-3.5 rounded-xl bg-zinc-50 dark:bg-carbon-950/60 border border-zinc-200/80 dark:border-zinc-800">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label for="input-machine-rate" class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Printer Rate</label>
+                                    <i class="ph-bold ph-lightning text-amber-400 text-sm" title="Covers electricity + nozzle/belt wear & depreciation"></i>
+                                </div>
+                                <div class="flex items-baseline mt-1">
+                                    <span class="font-mono text-sm text-zinc-400 mr-1">$</span>
+                                    <input type="number" id="input-machine-rate" value="0.25" min="0" step="0.05" oninput="calculateAll()"
+                                        class="w-full bg-transparent font-mono text-xl font-bold focus:outline-none">
+                                    <span class="font-mono text-xs text-zinc-400">/hr</span>
+                                </div>
+                                <p class="text-[11px] text-zinc-400 mt-1">Power + wear & tear</p>
+                            </div>
+
+                            <!-- Active Labor Hourly Rate -->
+                            <div class="p-3.5 rounded-xl bg-zinc-50 dark:bg-carbon-950/60 border border-zinc-200/80 dark:border-zinc-800">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label for="input-labor-rate" class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Your Labor Rate</label>
+                                    <i class="ph-bold ph-user-gear text-sky-400 text-sm" title="Your hourly rate for hands-on prep and post-processing"></i>
+                                </div>
+                                <div class="flex items-baseline mt-1">
+                                    <span class="font-mono text-sm text-zinc-400 mr-1">$</span>
+                                    <input type="number" id="input-labor-rate" value="20.00" min="0" step="1" oninput="onManualRateChange()"
+                                        class="w-full bg-transparent font-mono text-xl font-bold focus:outline-none">
+                                    <span class="font-mono text-xs text-zinc-400">/hr</span>
+                                </div>
+                                <p class="text-[11px] text-zinc-400 mt-1">Active hands-on time</p>
+                            </div>
+
+                            <!-- Failure / Waste Buffer -->
+                            <div class="p-3.5 rounded-xl bg-zinc-50 dark:bg-carbon-950/60 border border-zinc-200/80 dark:border-zinc-800">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label for="input-failure-rate" class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Failure Buffer</label>
+                                    <i class="ph-bold ph-shield-warning text-prusa-500 text-sm" title="Covers occasional failed prints and wasted filament"></i>
+                                </div>
+                                <div class="flex items-baseline mt-1">
+                                    <input type="number" id="input-failure-rate" value="10" min="0" max="100" step="1" oninput="calculateAll()"
+                                        class="w-full bg-transparent font-mono text-xl font-bold focus:outline-none">
+                                    <span class="font-mono text-sm text-zinc-400 ml-1">%</span>
+                                </div>
+                                <p class="text-[11px] text-zinc-400 mt-1">Covers failed prints</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Sticky Live Quote Receipt (5 cols on desktop) -->
+            <div class="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
+                <div class="bg-white dark:bg-carbon-900 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-xl">
+                    
+                    <!-- Top Receipt Banner -->
+                    <div class="bg-gradient-to-br from-zinc-900 via-carbon-900 to-zinc-950 text-white p-6 relative overflow-hidden">
+                        <div class="absolute -right-8 -top-8 w-36 h-36 bg-bambu-500/15 rounded-full blur-2xl pointer-events-none"></div>
+                        
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-mono uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-bambu-400"></span>
+                                Recommended Price
+                            </span>
+                            <!-- Clean Rounding Toggle -->
+                            <label class="inline-flex items-center gap-2 cursor-pointer select-none bg-zinc-800/90 hover:bg-zinc-800 px-2.5 py-1 rounded-full border border-zinc-700 transition">
+                                <input type="checkbox" id="toggle-round" class="sr-only peer" onchange="calculateAll()">
+                                <div class="w-7 h-4 bg-zinc-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all relative peer-checked:bg-bambu-500"></div>
+                                <span class="text-[11px] font-medium text-zinc-300">Clean $ Round</span>
+                            </label>
+                        </div>
+
+                        <!-- Huge Recommended Charge Price -->
+                        <div class="flex items-baseline justify-between gap-2 my-1">
+                            <div>
+                                <div class="flex items-baseline gap-2">
+                                    <span id="out-final-price" class="font-mono text-5xl sm:text-6xl font-extrabold tracking-tight text-white">$9.99</span>
+                                    <span id="out-unit-label" class="text-xs font-mono text-zinc-400 hidden">/ total</span>
+                                </div>
+                                <p id="out-unrounded-hint" class="text-xs font-mono text-zinc-400 mt-1">Exact calculated: $9.99</p>
+                            </div>
+                            <!-- Per-Unit Badge when Qty > 1 -->
+                            <div id="unit-price-box" class="hidden text-right bg-zinc-800/80 border border-zinc-700 rounded-xl px-3 py-2">
+                                <span class="block text-[10px] font-mono uppercase text-zinc-400">Per Unit</span>
+                                <span id="out-unit-price" class="font-mono text-lg font-bold text-bambu-400">$9.99</span>
+                            </div>
+                        </div>
+
+                        <!-- Net Pocket Profit Callout Bar -->
+                        <div class="mt-5 pt-4 border-t border-zinc-800/90 grid grid-cols-2 gap-3">
+                            <div class="bg-bambu-500/10 border border-bambu-500/30 rounded-xl p-3">
+                                <span class="text-[11px] uppercase font-bold tracking-wider text-bambu-400 block">In Your Pocket (Net)</span>
+                                <div class="flex items-baseline gap-1.5 mt-0.5">
+                                    <span id="out-total-takehome" class="font-mono text-xl font-bold text-bambu-400">$6.21</span>
+                                    <span id="out-margin-pct" class="text-xs font-mono text-bambu-400/80">(62%)</span>
+                                </div>
+                                <span class="text-[10px] text-zinc-400 block mt-0.5">Profit + Your Hands-on Labor</span>
+                            </div>
+
+                            <div class="bg-zinc-800/60 border border-zinc-700/70 rounded-xl p-3">
+                                <span class="text-[11px] uppercase font-bold tracking-wider text-zinc-400 block">Hard Out-of-Pocket</span>
+                                <div class="flex items-baseline gap-1.5 mt-0.5">
+                                    <span id="out-hard-cost" class="font-mono text-xl font-bold text-zinc-200">$3.78</span>
+                                </div>
+                                <span class="text-[10px] text-zinc-400 block mt-0.5">Filament + Machine + Extras</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Itemized Breakdown & Color Progress Bar -->
+                    <div class="p-5 sm:p-6 space-y-5">
+                        <div>
+                            <div class="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">
+                                <span>Itemized Cost Breakdown</span>
+                                <span id="breakdown-qty-label" class="font-mono text-[11px]">Batch of 1</span>
+                            </div>
+
+                            <!-- Multi-segment visual bar -->
+                            <div class="h-3 w-full rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex gap-0.5 p-0.5">
+                                <div id="bar-material" class="h-full bg-sky-500 rounded-l-full transition-all duration-300" style="width: 25%" title="Material Cost"></div>
+                                <div id="bar-machine" class="h-full bg-prusa-500 transition-all duration-300" style="width: 15%" title="Machine Cost"></div>
+                                <div id="bar-labor" class="h-full bg-amber-400 transition-all duration-300" style="width: 25%" title="Hands-on Labor"></div>
+                                <div id="bar-hardware" class="h-full bg-purple-500 transition-all duration-300" style="width: 0%" title="Hardware & Extras"></div>
+                                <div id="bar-profit" class="h-full bg-bambu-500 rounded-r-full transition-all duration-300" style="width: 35%" title="Pure Profit Markup"></div>
+                            </div>
+                        </div>
+
+                        <!-- Line Items -->
+                        <div class="space-y-2.5 text-sm">
+                            <!-- Material Cost -->
+                            <div class="flex items-center justify-between py-1 border-b border-zinc-100 dark:border-zinc-800/60">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-sky-500 shrink-0"></span>
+                                    <div>
+                                        <span class="font-medium text-zinc-800 dark:text-zinc-200">Filament + Waste Buffer</span>
+                                        <span id="detail-material" class="block text-[11px] font-mono text-zinc-400">120g @ $20/kg (+10% fail)</span>
+                                    </div>
+                                </div>
+                                <span id="out-material-cost" class="font-mono font-semibold text-zinc-900 dark:text-zinc-100">$2.64</span>
+                            </div>
+
+                            <!-- Machine Cost -->
+                            <div class="flex items-center justify-between py-1 border-b border-zinc-100 dark:border-zinc-800/60">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-prusa-500 shrink-0"></span>
+                                    <div>
+                                        <span class="font-medium text-zinc-800 dark:text-zinc-200">Machine Run & Power</span>
+                                        <span id="detail-machine" class="block text-[11px] font-mono text-zinc-400">4.5 hrs @ $0.25/hr</span>
+                                    </div>
+                                </div>
+                                <span id="out-machine-cost" class="font-mono font-semibold text-zinc-900 dark:text-zinc-100">$1.13</span>
+                            </div>
+
+                            <!-- Labor Cost -->
+                            <div class="flex items-center justify-between py-1 border-b border-zinc-100 dark:border-zinc-800/60">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
+                                    <div>
+                                        <span class="font-medium text-zinc-800 dark:text-zinc-200">Hands-on Prep & Labor</span>
+                                        <span id="detail-labor" class="block text-[11px] font-mono text-zinc-400">10 mins @ $20/hr</span>
+                                    </div>
+                                </div>
+                                <span id="out-labor-cost" class="font-mono font-semibold text-zinc-900 dark:text-zinc-100">$3.33</span>
+                            </div>
+
+                            <!-- Hardware / Extras -->
+                            <div class="flex items-center justify-between py-1 border-b border-zinc-100 dark:border-zinc-800/60">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0"></span>
+                                    <div>
+                                        <span class="font-medium text-zinc-800 dark:text-zinc-200">Hardware & Packaging</span>
+                                        <span id="detail-hardware" class="block text-[11px] font-mono text-zinc-400">Inserts, magnets, box</span>
+                                    </div>
+                                </div>
+                                <span id="out-hardware-cost" class="font-mono font-semibold text-zinc-900 dark:text-zinc-100">$0.00</span>
+                            </div>
+
+                            <!-- Pure Profit Margin -->
+                            <div class="flex items-center justify-between py-1.5 bg-bambu-500/5 px-2.5 -mx-2.5 rounded-lg">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-bambu-500 shrink-0"></span>
+                                    <div>
+                                        <span class="font-semibold text-bambu-600 dark:text-bambu-400">Pure Business Profit</span>
+                                        <span id="detail-profit" class="block text-[11px] font-mono text-zinc-400">2.0x markup + rounding</span>
+                                    </div>
+                                </div>
+                                <span id="out-pure-profit" class="font-mono font-bold text-bambu-600 dark:text-bambu-400">$3.77</span>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons: Copy Client Quote, Copy Internal, Save Quote -->
+                        <div class="pt-2 space-y-2.5">
+                            <button type="button" onclick="copyClientQuote()" class="w-full py-3 px-4 rounded-xl bg-bambu-500 hover:bg-bambu-600 active:scale-[0.99] text-white font-bold text-sm shadow-lg shadow-bambu-500/20 transition flex items-center justify-center gap-2">
+                                <i class="ph-bold ph-copy text-lg"></i>
+                                <span>Copy Clean Client Quote</span>
+                            </button>
+
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <button type="button" onclick="copyInternalBreakdown()" class="py-2.5 px-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 font-semibold text-xs transition flex items-center justify-center gap-1.5">
+                                    <i class="ph-bold ph-file-text text-sm text-prusa-500"></i>
+                                    <span>Copy Internal Specs</span>
+                                </button>
+                                <button type="button" onclick="saveCurrentQuote()" class="py-2.5 px-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 font-semibold text-xs transition flex items-center justify-center gap-1.5">
+                                    <i class="ph-bold ph-bookmark-simple text-sm text-bambu-500"></i>
+                                    <span>Save to History</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Saved Quotes / History Table Section -->
+        <section id="saved-quotes-section" class="pt-4">
+            <div class="bg-white dark:bg-carbon-900 rounded-2xl border border-zinc-200 dark:border-zinc-800/90 p-5 sm:p-6 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                    <div class="flex items-center gap-2">
+                        <i class="ph-bold ph-clock-counter-clockwise text-prusa-500 text-xl"></i>
+                        <div>
+                            <h2 class="font-bold text-base sm:text-lg">Saved Print Quotes</h2>
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400">Stored locally in your browser for quick comparison or re-loading</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="clearAllSavedQuotes()" id="btn-clear-history" class="text-xs text-red-500 hover:text-red-400 font-medium px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition hidden">
+                        Clear All
+                    </button>
+                </div>
+
+                <!-- Empty State -->
+                <div id="saved-empty-state" class="text-center py-8 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
+                    <i class="ph-duotone ph-cube text-3xl text-zinc-400 mb-1"></i>
+                    <p class="text-sm font-medium text-zinc-600 dark:text-zinc-300">No saved quotes yet</p>
+                    <p class="text-xs text-zinc-400 mt-0.5">Click "Save to History" on any quote to bookmark it for comparison.</p>
+                </div>
+
+                <!-- Saved Quotes Table -->
+                <div id="saved-table-wrapper" class="overflow-x-auto hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-zinc-200 dark:border-zinc-800 text-[11px] font-mono uppercase text-zinc-400">
+                                <th class="py-2.5 pr-4">Project / Part</th>
+                                <th class="py-2.5 px-3">Print Specs</th>
+                                <th class="py-2.5 px-3">Qty</th>
+                                <th class="py-2.5 px-3">Hard Cost</th>
+                                <th class="py-2.5 px-3">Take-Home</th>
+                                <th class="py-2.5 px-3">Quote Price</th>
+                                <th class="py-2.5 pl-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="saved-quotes-tbody" class="divide-y divide-zinc-100 dark:divide-zinc-800/70 text-sm">
+                            <!-- Dynamically populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Non-intrusive Toast Notification -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 pointer-events-none flex flex-col gap-2"></div>
+
+    <!-- Hidden textarea for reliable clipboard copying inside iframes -->
+    <textarea id="clipboard-helper" class="fixed -top-96 opacity-0 pointer-events-none" aria-hidden="true"></textarea>
+
+    <script>
+        // --- State & Preset Configurations ---
+        let currentPreset = 'standard';
+        let latestCalculation = {};
+        const STORAGE_KEY = 'layerrate_saved_quotes_v1';
+
+        const PRESETS = {
+            friend: {
+                multiplier: 1.0,
+                laborRate: 0,
+                failureRate: 10,
+                hint: 'Friend / At-Cost: Covers filament, machine wear & 10% failure buffer ($0 profit/labor).'
+            },
+            standard: {
+                multiplier: 2.0,
+                laborRate: 20,
+                failureRate: 10,
+                hint: 'Standard Commission: 2.0x material/machine markup + $20/hr hands-on labor.'
+            },
+            commercial: {
+                multiplier: 3.5,
+                laborRate: 25,
+                failureRate: 15,
+                hint: 'Commercial / Etsy Retail: 3.5x multiplier + $25/hr labor to cover platform fees & profit.'
+            },
+            custom: {
+                hint: 'Custom Mode: Manually tuned multiplier and shop rates.'
+            }
+        };
+
+        // --- Initialization ---
+        window.addEventListener('DOMContentLoaded', () => {
+            highlightActivePreset('standard');
+            calculateAll();
+            renderSavedQuotes();
+        });
+
+        // --- Theme Toggle ---
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = 'ph-bold ph-moon text-lg text-zinc-700';
+            } else {
+                html.classList.add('dark');
+                icon.className = 'ph-bold ph-sun text-lg text-amber-400';
+            }
+        }
+
+        // --- Preset Selection Logic ---
+        function applyPricingPreset(presetKey) {
+            currentPreset = presetKey;
+            const preset = PRESETS[presetKey];
+            if (presetKey !== 'custom' && preset) {
+                document.getElementById('input-multiplier').value = preset.multiplier.toFixed(1);
+                document.getElementById('slider-multiplier').value = preset.multiplier;
+                document.getElementById('input-labor-rate').value = preset.laborRate.toFixed(2);
+                document.getElementById('input-failure-rate').value = preset.failureRate;
+            }
+            highlightActivePreset(presetKey);
+            calculateAll();
+        }
+
+        function highlightActivePreset(presetKey) {
+            const buttons = ['friend', 'standard', 'commercial', 'custom'];
+            buttons.forEach(key => {
+                const btn = document.getElementById(`preset-btn-${key}`);
+                if (!btn) return;
+                if (key === presetKey) {
+                    btn.className = 'preset-card group text-left p-3.5 rounded-xl border-2 transition-all duration-150 bg-bambu-500/5 dark:bg-bambu-500/10 border-bambu-500 shadow-sm';
+                } else {
+                    btn.className = 'preset-card group text-left p-3.5 rounded-xl border transition-all duration-150 bg-white dark:bg-carbon-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700';
+                }
+            });
+            const hintEl = document.getElementById('preset-status-hint');
+            if (hintEl && PRESETS[presetKey]) {
+                hintEl.textContent = PRESETS[presetKey].hint;
+            }
+        }
+
+        // --- Quick Stepper & Input Sync Helpers ---
+        function adjustValue(inputId, delta) {
+            const el = document.getElementById(inputId);
+            let val = parseFloat(el.value) || 0;
+            val = Math.max(0, val + delta);
+            el.value = val;
+            calculateAll();
+        }
+
+        function setExactValue(inputId, val) {
+            document.getElementById(inputId).value = val;
+            calculateAll();
+        }
+
+        function adjustTime(addMinutes) {
+            const hrsEl = document.getElementById('input-hours');
+            const minsEl = document.getElementById('input-minutes');
+            let totalMins = (parseInt(hrsEl.value) || 0) * 60 + (parseInt(minsEl.value) || 0) + addMinutes;
+            totalMins = Math.max(0, totalMins);
+            hrsEl.value = Math.floor(totalMins / 60);
+            minsEl.value = totalMins % 60;
+            calculateAll();
+        }
+
+        function adjustQty(delta) {
+            const el = document.getElementById('input-qty');
+            let val = parseInt(el.value) || 1;
+            val = Math.max(1, val + delta);
+            el.value = val;
+            calculateAll();
+        }
+
+        function setSpoolCost(cost, btnEl) {
+            document.getElementById('input-spool-cost').value = cost;
+            document.getElementById('slider-spool-cost').value = cost;
+            document.querySelectorAll('.spool-chip').forEach(chip => {
+                chip.className = 'spool-chip text-xs font-mono px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800/70 hover:border-bambu-500 transition';
+            });
+            if (btnEl) {
+                btnEl.className = 'spool-chip text-xs font-mono px-2.5 py-1 rounded-lg border border-bambu-500/60 bg-bambu-500/10 text-bambu-500 font-semibold transition';
+            }
+            calculateAll();
+        }
+
+        function syncPair(sourceId, targetId) {
+            const src = document.getElementById(sourceId);
+            const tgt = document.getElementById(targetId);
+            tgt.value = src.value;
+            calculateAll();
+        }
+
+        function syncMultiplierFromSlider() {
+            const sliderVal = parseFloat(document.getElementById('slider-multiplier').value) || 1.0;
+            document.getElementById('input-multiplier').value = sliderVal.toFixed(2).replace(/\.00$/, '.0');
+            switchToCustomPreset();
+            calculateAll();
+        }
+
+        function syncMultiplierFromInput() {
+            let val = parseFloat(document.getElementById('input-multiplier').value);
+            if (isNaN(val) || val < 1.0) val = 1.0;
+            document.getElementById('slider-multiplier').value = Math.min(4.0, val);
+            switchToCustomPreset();
+            calculateAll();
+        }
+
+        function onManualRateChange() {
+            switchToCustomPreset();
+            calculateAll();
+        }
+
+        function switchToCustomPreset() {
+            currentPreset = 'custom';
+            const mult = parseFloat(document.getElementById('input-multiplier').value) || 1.0;
+            document.getElementById('custom-badge-mult').textContent = `${mult.toFixed(1)}x`;
+            highlightActivePreset('custom');
+        }
+
+        // --- Core Pricing Calculation Engine ---
+        function calculateAll() {
+            // 1. Read Primary Inputs
+            const grams = Math.max(0, parseFloat(document.getElementById('input-grams').value) || 0);
+            const hours = Math.max(0, parseFloat(document.getElementById('input-hours').value) || 0);
+            const minutes = Math.max(0, parseFloat(document.getElementById('input-minutes').value) || 0);
+            const laborMins = Math.max(0, parseFloat(document.getElementById('input-labor-mins').value) || 0);
+            const hardwareUnit = Math.max(0, parseFloat(document.getElementById('input-hardware').value) || 0);
+            const qty = Math.max(1, parseInt(document.getElementById('input-qty').value) || 1);
+
+            // 2. Read Shop Rates & Margins
+            const spoolCost = Math.max(0, parseFloat(document.getElementById('input-spool-cost').value) || 0);
+            const machineRate = Math.max(0, parseFloat(document.getElementById('input-machine-rate').value) || 0);
+            const laborRate = Math.max(0, parseFloat(document.getElementById('input-labor-rate').value) || 0);
+            const failurePct = Math.max(0, parseFloat(document.getElementById('input-failure-rate').value) || 0);
+            const multiplier = Math.max(1.0, parseFloat(document.getElementById('input-multiplier').value) || 1.0);
+            const cleanRound = document.getElementById('toggle-round').checked;
+
+            // Update Markup % badge
+            const markupPercent = Math.round((multiplier - 1.0) * 100);
+            document.getElementById('display-markup-pct').textContent = `+${markupPercent}% Markup`;
+
+            // 3. Per-Unit Cost Math
+            const totalPrintHours = hours + (minutes / 60);
+            const failureMultiplier = 1 + (failurePct / 100);
+
+            const rawFilamentCost = (grams / 1000) * spoolCost;
+            const unitMaterialCost = rawFilamentCost * failureMultiplier;
+            const unitMachineCost = totalPrintHours * machineRate * failureMultiplier;
+            const unitLaborCost = (laborMins / 60) * laborRate;
+
+            // Base production cost (Material + Machine) gets multiplied by the Profit Multiplier;
+            // Active Labor and Extra Hardware are added on top so pass-through hardware isn't artificially inflated,
+            // or if multiplier > 1, base production cost generates the core markup.
+            const unitProductionCost = unitMaterialCost + unitMachineCost;
+            const unitMarkupProfit = unitProductionCost * (multiplier - 1.0);
+
+            // Also apply a modest 15% buffer on extra hardware if commercial, or keep simple:
+            const unitRawQuote = (unitProductionCost * multiplier) + unitLaborCost + hardwareUnit;
+
+            // Apply Psychological / Clean Dollar Rounding to the unit price if enabled
+            let finalUnitPrice = unitRawQuote;
+            if (cleanRound && unitRawQuote > 0) {
+                finalUnitPrice = Math.ceil(unitRawQuote);
+            }
+
+            // 4. Batch Totals (Multiplied by Quantity)
+            const totalMaterial = unitMaterialCost * qty;
+            const totalMachine = unitMachineCost * qty;
+            const totalLabor = unitLaborCost * qty;
+            const totalHardware = hardwareUnit * qty;
+            const totalUnroundedPrice = unitRawQuote * qty;
+            const totalFinalPrice = finalUnitPrice * qty;
+
+            // Hard out-of-pocket costs (Filament + Machine + Extra Hardware)
+            const totalHardCost = totalMaterial + totalMachine + totalHardware;
+            // Pure business profit (after paying hard costs AND paying yourself for hands-on labor)
+            const totalPureProfit = Math.max(0, totalFinalPrice - totalHardCost - totalLabor);
+            // Total Take-Home (What goes into your pocket = Pure Profit + Your Hands-on Labor)
+            const totalTakeHome = totalPureProfit + totalLabor;
+            const takeHomeMarginPct = totalFinalPrice > 0 ? Math.round((totalTakeHome / totalFinalPrice) * 100) : 0;
+
+            // Save snapshot for clipboard & history
+            latestCalculation = {
+                projectName: document.getElementById('project-name').value.trim() || 'Custom 3D Print',
+                grams,
+                hours,
+                minutes,
+                totalPrintHours,
+                laborMins,
+                qty,
+                spoolCost,
+                machineRate,
+                laborRate,
+                failurePct,
+                multiplier,
+                totalMaterial,
+                totalMachine,
+                totalLabor,
+                totalHardware,
+                totalHardCost,
+                totalPureProfit,
+                totalTakeHome,
+                takeHomeMarginPct,
+                finalUnitPrice,
+                totalFinalPrice,
+                totalUnroundedPrice
+            };
+
+            // 5. Update DOM Receipt
+            document.getElementById('out-final-price').textContent = formatCurrency(totalFinalPrice);
+            
+            const unroundedHint = document.getElementById('out-unrounded-hint');
+            if (cleanRound) {
+                unroundedHint.textContent = `Exact unrounded: ${formatCurrency(totalUnroundedPrice)} (+${formatCurrency(totalFinalPrice - totalUnroundedPrice)} rounded)`;
+            } else {
+                unroundedHint.textContent = `Toggle "Clean $ Round" for even dollar pricing`;
+            }
+
+            // Show/Hide Per-Unit Box if Qty > 1
+            const unitBox = document.getElementById('unit-price-box');
+            const unitLabel = document.getElementById('out-unit-label');
+            if (qty > 1) {
+                unitBox.classList.remove('hidden');
+                unitLabel.classList.remove('hidden');
+                document.getElementById('out-unit-price').textContent = formatCurrency(finalUnitPrice);
+                document.getElementById('breakdown-qty-label').textContent = `Batch of ${qty} units`;
+            } else {
+                unitBox.classList.add('hidden');
+                unitLabel.classList.add('hidden');
+                document.getElementById('breakdown-qty-label').textContent = `Single Unit (1x)`;
+            }
+
+            // Pocket Profit & Hard Cost Callouts
+            document.getElementById('out-total-takehome').textContent = formatCurrency(totalTakeHome);
+            document.getElementById('out-margin-pct').textContent = `(${takeHomeMarginPct}%)`;
+            document.getElementById('out-hard-cost').textContent = formatCurrency(totalHardCost);
+
+            // Itemized Costs & Sub-labels
+            document.getElementById('out-material-cost').textContent = formatCurrency(totalMaterial);
+            document.getElementById('detail-material').textContent = `${grams * qty}g @ $${spoolCost}/kg (+${failurePct}% fail)`;
+
+            document.getElementById('out-machine-cost').textContent = formatCurrency(totalMachine);
+            document.getElementById('detail-machine').textContent = `${(totalPrintHours * qty).toFixed(1)}h @ $${machineRate.toFixed(2)}/hr`;
+
+            document.getElementById('out-labor-cost').textContent = formatCurrency(totalLabor);
+            document.getElementById('detail-labor').textContent = `${laborMins * qty}m @ $${laborRate.toFixed(0)}/hr`;
+
+            document.getElementById('out-hardware-cost').textContent = formatCurrency(totalHardware);
+            document.getElementById('detail-hardware').textContent = qty > 1 ? `$${hardwareUnit.toFixed(2)} × ${qty} units` : `Inserts, magnets, box`;
+
+            document.getElementById('out-pure-profit').textContent = formatCurrency(totalPureProfit);
+            document.getElementById('detail-profit').textContent = `${multiplier.toFixed(2)}x markup${cleanRound ? ' + rounding' : ''}`;
+
+            // Update Visual Progress Bar Proportions
+            const denom = Math.max(0.01, totalFinalPrice);
+            document.getElementById('bar-material').style.width = `${(totalMaterial / denom) * 100}%`;
+            document.getElementById('bar-machine').style.width = `${(totalMachine / denom) * 100}%`;
+            document.getElementById('bar-labor').style.width = `${(totalLabor / denom) * 100}%`;
+            document.getElementById('bar-hardware').style.width = `${(totalHardware / denom) * 100}%`;
+            document.getElementById('bar-profit').style.width = `${(totalPureProfit / denom) * 100}%`;
+        }
+
+        function formatCurrency(num) {
+            return '$' + (Number(num) || 0).toFixed(2);
+        }
+
+        // --- Reset to Default Values ---
+        function resetToDefaults() {
+            document.getElementById('project-name').value = '';
+            document.getElementById('input-grams').value = 120;
+            document.getElementById('input-hours').value = 4;
+            document.getElementById('input-minutes').value = 30;
+            document.getElementById('input-labor-mins').value = 10;
+            document.getElementById('input-hardware').value = '0.00';
+            document.getElementById('input-qty').value = 1;
+            document.getElementById('input-spool-cost').value = 20;
+            document.getElementById('slider-spool-cost').value = 20;
+            document.getElementById('input-machine-rate').value = '0.25';
+            document.getElementById('toggle-round').checked = false;
+            applyPricingPreset('standard');
+            showToast('Reset to standard shop defaults', 'info');
+        }
+
+        // --- Clipboard Actions (Client Quote vs. Internal Breakdown) ---
+        function copyTextToClipboard(text, successMsg) {
+            const helper = document.getElementById('clipboard-helper');
+            helper.value = text;
+            helper.select();
+            helper.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                showToast(successMsg, 'success');
+            } catch (err) {
+                showToast('Could not copy automatically', 'error');
+            }
+        }
+
+        function copyClientQuote() {
+            const c = latestCalculation;
+            const timeStr = `${c.hours > 0 ? c.hours + 'h ' : ''}${c.minutes}m`;
+            const lines = [
+                `3D PRINT QUOTE — ${c.projectName}`,
+                `----------------------------------------`,
+                `• Quantity: ${c.qty} ${c.qty > 1 ? 'units' : 'unit'}`,
+                `• Est. Print Time: ${timeStr} per unit (${c.grams}g material)`,
+                c.qty > 1 ? `• Unit Price: ${formatCurrency(c.finalUnitPrice)} each` : null,
+                `• Total Quoted Price: ${formatCurrency(c.totalFinalPrice)}`,
+                `----------------------------------------`,
+                `Includes machine time, material, support removal & quality check.`
+            ].filter(Boolean).join('\n');
+
+            copyTextToClipboard(lines, 'Clean client quote copied to clipboard!');
+        }
+
+        function copyInternalBreakdown() {
+            const c = latestCalculation;
+            const lines = [
+                `[INTERNAL COST BREAKDOWN] — ${c.projectName}`,
+                `Qty: ${c.qty} | Weight: ${c.grams}g/ea | Print Time: ${c.hours}h ${c.minutes}m/ea`,
+                `Rates: $${c.spoolCost}/kg spool | $${c.machineRate}/hr printer | ${c.multiplier}x mult`,
+                `----------------------------------------`,
+                `Material (+${c.failurePct}% buffer): ${formatCurrency(c.totalMaterial)}`,
+                `Machine Run Cost: ${formatCurrency(c.totalMachine)}`,
+                `Hands-on Labor (${c.laborMins * c.qty}m): ${formatCurrency(c.totalLabor)}`,
+                `Extra Hardware/Packaging: ${formatCurrency(c.totalHardware)}`,
+                `Pure Business Profit: ${formatCurrency(c.totalPureProfit)}`,
+                `----------------------------------------`,
+                `Hard Out-of-Pocket: ${formatCurrency(c.totalHardCost)}`,
+                `Net Take-Home (Profit + Labor): ${formatCurrency(c.totalTakeHome)} (${c.takeHomeMarginPct}%)`,
+                `FINAL CHARGED PRICE: ${formatCurrency(c.totalFinalPrice)}`
+            ].join('\n');
+
+            copyTextToClipboard(lines, 'Internal cost breakdown copied!');
+        }
+
+        // --- Saved Quotes History (localStorage) ---
+        function getSavedQuotes() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveCurrentQuote() {
+            const quotes = getSavedQuotes();
+            const c = latestCalculation;
+            const newEntry = {
+                id: Date.now(),
+                timestamp: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+                ...c
+            };
+            quotes.unshift(newEntry);
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(quotes.slice(0, 25)));
+            } catch (e) {}
+            renderSavedQuotes();
+            showToast(`Saved "${c.projectName}" to history!`, 'success');
+        }
+
+        function loadSavedQuote(id) {
+            const quotes = getSavedQuotes();
+            const found = quotes.find(q => q.id === id);
+            if (!found) return;
+
+            document.getElementById('project-name').value = found.projectName === 'Custom 3D Print' ? '' : found.projectName;
+            document.getElementById('input-grams').value = found.grams;
+            document.getElementById('input-hours').value = found.hours;
+            document.getElementById('input-minutes').value = found.minutes;
+            document.getElementById('input-labor-mins').value = found.laborMins;
+            document.getElementById('input-hardware').value = (found.totalHardware / found.qty).toFixed(2);
+            document.getElementById('input-qty').value = found.qty;
+            document.getElementById('input-spool-cost').value = found.spoolCost;
+            document.getElementById('slider-spool-cost').value = found.spoolCost;
+            document.getElementById('input-machine-rate').value = found.machineRate;
+            document.getElementById('input-labor-rate').value = found.laborRate;
+            document.getElementById('input-failure-rate').value = found.failurePct;
+            document.getElementById('input-multiplier').value = found.multiplier;
+            document.getElementById('slider-multiplier').value = Math.min(4.0, found.multiplier);
+
+            switchToCustomPreset();
+            calculateAll();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showToast(`Loaded "${found.projectName}"`, 'info');
+        }
+
+        function deleteSavedQuote(id) {
+            const quotes = getSavedQuotes().filter(q => q.id !== id);
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(quotes));
+            } catch (e) {}
+            renderSavedQuotes();
+        }
+
+        function clearAllSavedQuotes() {
+            try {
+                localStorage.removeItem(STORAGE_KEY);
+            } catch (e) {}
+            renderSavedQuotes();
+            showToast('Cleared saved quote history', 'info');
+        }
+
+        function renderSavedQuotes() {
+            const quotes = getSavedQuotes();
+            const badge = document.getElementById('saved-count-badge');
+            const emptyState = document.getElementById('saved-empty-state');
+            const tableWrapper = document.getElementById('saved-table-wrapper');
+            const clearBtn = document.getElementById('btn-clear-history');
+            const tbody = document.getElementById('saved-quotes-tbody');
+
+            badge.textContent = quotes.length;
+
+            if (quotes.length === 0) {
+                emptyState.classList.remove('hidden');
+                tableWrapper.classList.add('hidden');
+                clearBtn.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            tableWrapper.classList.remove('hidden');
+            clearBtn.classList.remove('hidden');
+
+            tbody.innerHTML = quotes.map(q => `
+                <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
+                    <td class="py-3 pr-4">
+                        <span class="font-bold text-zinc-900 dark:text-zinc-100 block">${escapeHtml(q.projectName)}</span>
+                        <span class="text-[11px] font-mono text-zinc-400">${q.timestamp} • ${q.multiplier}x mult</span>
+                    </td>
+                    <td class="py-3 px-3 font-mono text-xs text-zinc-600 dark:text-zinc-300">
+                        ${q.grams}g • ${q.hours}h ${q.minutes}m
+                    </td>
+                    <td class="py-3 px-3 font-mono text-xs">${q.qty}x</td>
+                    <td class="py-3 px-3 font-mono text-xs text-zinc-500">${formatCurrency(q.totalHardCost)}</td>
+                    <td class="py-3 px-3 font-mono text-xs font-semibold text-bambu-500">${formatCurrency(q.totalTakeHome)}</td>
+                    <td class="py-3 px-3 font-mono text-sm font-bold text-zinc-900 dark:text-white">${formatCurrency(q.totalFinalPrice)}</td>
+                    <td class="py-3 pl-3 text-right whitespace-nowrap">
+                        <button onclick="loadSavedQuote(${q.id})" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-bambu-500 hover:text-white transition mr-1">
+                            Load
+                        </button>
+                        <button onclick="deleteSavedQuote(${q.id})" aria-label="Delete quote" class="text-xs p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition">
+                            <i class="ph-bold ph-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, s => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[s]));
+        }
+
+        // --- Toast Notification Helper ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const iconClass = type === 'success' ? 'ph-check-circle text-bambu-400' : 'ph-info text-sky-400';
+
+            toast.className = 'flex items-center gap-2.5 bg-zinc-900 dark:bg-zinc-800 text-white border border-zinc-700 px-4 py-3 rounded-xl shadow-xl text-xs font-medium transform transition-all duration-200 translate-y-2 opacity-0';
+            toast.innerHTML = `<i class="ph-fill ${iconClass} text-lg"></i><span>${escapeHtml(message)}</span>`;
+
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 200);
+            }, 2600);
+        }
+    </script>
+</body>
+</html>

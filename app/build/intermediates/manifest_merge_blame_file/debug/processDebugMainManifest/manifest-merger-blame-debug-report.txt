@@ -1,0 +1,48 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.layerrate.app"
+4    android:versionCode="2"
+5    android:versionName="2.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="26"
+9        android:targetSdkVersion="35" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:3:5-66
+11-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:3:22-64
+12    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+12-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:4:5-82
+12-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:4:22-80
+13
+14    <application
+14-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:5:5-10:19
+15        android:debuggable="true"
+16        android:extractNativeLibs="false"
+17        android:label="LayerRate"
+17-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:5:82-107
+18        android:testOnly="true"
+19        android:theme="@android:style/Theme.Material.Light.NoActionBar"
+19-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:5:18-81
+20        android:usesCleartextTraffic="false" >
+20-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:6:7-43
+21        <activity
+21-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:7:7-9:18
+22            android:name="com.layerrate.app.MainActivity"
+22-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:7:17-45
+23            android:exported="true" >
+23-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:7:46-69
+24            <intent-filter>
+24-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:8:9-150
+25                <action android:name="android.intent.action.MAIN" />
+25-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:8:24-75
+25-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:8:32-73
+26
+27                <category android:name="android.intent.category.LAUNCHER" />
+27-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:8:75-134
+27-->C:\Users\Administrator\Downloads\LayerRate_Android_Project(1)\LayerRate_Android_Project\app\src\main\AndroidManifest.xml:8:85-132
+28            </intent-filter>
+29        </activity>
+30    </application>
+31
+32</manifest>

@@ -1,0 +1,14 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.layerrate.app'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.layerrate.app'
+        minSdk 26
+        targetSdk 35
+        versionCode 2
+        versionName '2.0'
+        buildConfigField 'String', 'UPDATE_MANIFEST_URL', '"https://REPLACE-WITH-YOUR-HOST/layerrate/latest.json"'
+    }
+    buildFeatures { buildConfig true }
+}

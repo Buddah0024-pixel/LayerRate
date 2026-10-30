@@ -1,11 +1,15 @@
 {
   "currency": "USD",
-  "checkedAt": null,
+  "checkedAt": "2026-10-30",
   "prices": {
     "pla": null,
     "petg": null,
     "silk": null,
-    "tpu": null
+    "tpu": {
+      "usd": 38.99,
+      "product": "TPU for AMS",
+      "source": "https://bambulab-us.myshopify.com/products/tpu-for-ams"
+    }
   },
-  "note": "Prices are unavailable until verified against the Bambu Lab US store. Do not substitute estimated prices."
+  "note": "Official Bambu US single-spool prices, not bulk pricing. Some products may retain last verified value if unavailable."
 }

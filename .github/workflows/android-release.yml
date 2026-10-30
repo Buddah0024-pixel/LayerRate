@@ -1,0 +1,40 @@
+name: LayerRate signed release
+on:
+  workflow_dispatch:
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build release APK
+        run: gradle assembleRelease --no-daemon
+      - name: Sign and verify release APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.LAYERRATE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.LAYERRATE_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.LAYERRATE_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.LAYERRATE_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64"
+          test -n "$KEYSTORE_PASSWORD"
+          test -n "$KEY_PASSWORD"
+          test -n "$KEY_ALIAS"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/layerrate.jks"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$RUNNER_TEMP/layerrate.jks" --ks-key-alias "$KEY_ALIAS" --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD --out LayerRate.apk "$RUNNER_TEMP/aligned.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose LayerRate.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LayerRate-signed-release
+          path: LayerRate.apk

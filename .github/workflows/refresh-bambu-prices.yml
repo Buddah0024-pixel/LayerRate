@@ -6,7 +6,7 @@ on:
       - 'scripts/refresh_bambu_prices.py'
       - '.github/workflows/refresh-bambu-prices.yml'
   schedule:
-    - cron: '23 12 * * *'
+    - cron: '7 11 * * *'
 permissions:
   contents: write
 jobs:

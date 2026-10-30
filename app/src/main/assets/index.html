@@ -103,7 +103,7 @@
 
     <!-- Top Navigation Bar -->
     <header class="sticky top-0 z-30 backdrop-blur-md bg-white/80 dark:bg-carbon-950/80 border-b border-zinc-200 dark:border-zinc-800/80">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div class="max-w-6xl mx-auto px-3 sm:px-6 py-2 sm:py-0 min-h-16 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-bambu-500 to-emerald-700 flex items-center justify-center text-white shadow-lg shadow-bambu-500/20">
                     <i class="ph-bold ph-cube-focus text-2xl"></i>
@@ -117,13 +117,13 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2 sm:gap-3">
-                <button type="button" onclick="if(window.LayerRateAndroid){window.LayerRateAndroid.checkForUpdates()}else{alert('Update checks are available in the Android app')}" title="Check for LayerRate updates" class="text-xs font-semibold px-2.5 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center transition whitespace-nowrap" aria-label="Check for updates">Check Update</button>
-                <button onclick="resetToDefaults()" title="Reset all values to defaults" class="text-xs font-medium px-3 py-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition flex items-center gap-1.5">
+            <div class="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-1 sm:gap-3">
+                <button type="button" onclick="if(window.LayerRateAndroid){window.LayerRateAndroid.checkForUpdates()}else{alert('Update checks are available in the Android app')}" title="Check for LayerRate updates" class="text-xs font-semibold px-2 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center transition whitespace-nowrap" aria-label="Check for updates">Check Update</button>
+                <button onclick="resetToDefaults()" title="Reset all values to defaults" class="text-xs font-medium px-2 sm:px-3 py-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition flex items-center gap-1.5">
                     <i class="ph-bold ph-arrow-counter-clockwise text-sm"></i>
                     <span class="hidden sm:inline">Reset</span>
                 </button>
-                <a href="#saved-quotes-section" class="text-xs font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 transition flex items-center gap-1.5">
+                <a href="#saved-quotes-section" class="text-xs font-medium px-2 sm:px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 transition flex items-center gap-1.5">
                     <i class="ph-bold ph-bookmarks text-sm text-prusa-500"></i>
                     <span>Saved</span>
                     <span id="saved-count-badge" class="px-1.5 py-0.2 rounded-full bg-zinc-200 dark:bg-zinc-800 text-[11px] font-mono">0</span>

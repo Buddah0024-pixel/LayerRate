@@ -616,7 +616,7 @@
                     <div class="flex items-center gap-2">
                         <i class="ph-bold ph-clock-counter-clockwise text-prusa-500 text-xl"></i>
                         <div>
-                            <h2 class="font-bold text-base sm:text-lg">Saved Print Quotes</h2>
+                            <h2 class="font-bold text-base sm:text-lg">Saved Prints</h2>
                             <p class="text-xs text-zinc-500 dark:text-zinc-400">Stored locally in your browser for quick comparison or re-loading</p>
                         </div>
                     </div>
@@ -625,11 +625,15 @@
                     </button>
                 </div>
 
+                <div class="flex gap-2 mb-4">
+                    <button type="button" id="tab-active-prints" onclick="showPrintArchive(false)" class="text-xs font-bold px-3 py-2 rounded-lg bg-bambu-500 text-white">Current Saves</button>
+                    <button type="button" id="tab-archived-prints" onclick="showPrintArchive(true)" class="text-xs font-bold px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800">Archive <span id="archive-count">0</span></button>
+                </div>
                 <!-- Empty State -->
                 <div id="saved-empty-state" class="text-center py-8 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
                     <i class="ph-duotone ph-cube text-3xl text-zinc-400 mb-1"></i>
                     <p class="text-sm font-medium text-zinc-600 dark:text-zinc-300">No saved quotes yet</p>
-                    <p class="text-xs text-zinc-400 mt-0.5">Click "Save to History" on any quote to bookmark it for comparison.</p>
+                    <p class="text-xs text-zinc-400 mt-0.5">Tap "Save Print" to keep a named print here.</p>
                 </div>
 
                 <!-- Saved Quotes Table -->
@@ -667,6 +671,8 @@
         let currentPreset = 'standard';
         let latestCalculation = {};
         const STORAGE_KEY = 'layerrate_saved_quotes_v1';
+        const ARCHIVE_KEY = 'layerrate_archived_quotes_v1';
+        let showingArchive = false;
 
         const PRESETS = {
             friend: {
@@ -1114,14 +1120,14 @@
             };
             quotes.unshift(newEntry);
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(quotes.slice(0, 25)));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(quotes.slice(0, 100)));
             } catch (e) {}
             renderSavedQuotes();
             showToast(`Saved "${c.projectName}"!`, 'success');
         }
 
         function loadSavedQuote(id) {
-            const quotes = getSavedQuotes();
+            const quotes = showingArchive ? getArchivedQuotes() : getSavedQuotes();
             const found = quotes.find(q => q.id === id);
             if (!found) return;
 
@@ -1148,9 +1154,9 @@
         }
 
         function deleteSavedQuote(id) {
-            const quotes = getSavedQuotes().filter(q => q.id !== id);
+            const quotes = (showingArchive ? getArchivedQuotes() : getSavedQuotes()).filter(q => q.id !== id);
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(quotes));
+                localStorage.setItem(showingArchive ? ARCHIVE_KEY : STORAGE_KEY, JSON.stringify(quotes));
             } catch (e) {}
             renderSavedQuotes();
         }
@@ -1163,26 +1169,54 @@
             showToast('Cleared saved quote history', 'info');
         }
 
+        function getArchivedQuotes() {
+            try { return JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]'); }
+            catch(e) { return []; }
+        }
+        function showPrintArchive(archived) {
+            showingArchive = archived;
+            renderSavedQuotes();
+        }
+        function toggleArchiveQuote(id) {
+            const active = getSavedQuotes(), archived = getArchivedQuotes();
+            const source = showingArchive ? archived : active;
+            const target = showingArchive ? active : archived;
+            const idx = source.findIndex(q => q.id === id);
+            if(idx < 0) return;
+            target.unshift(source.splice(idx,1)[0]);
+            try {
+                localStorage.setItem(STORAGE_KEY,JSON.stringify(showingArchive ? target : source));
+                localStorage.setItem(ARCHIVE_KEY,JSON.stringify(showingArchive ? source : target));
+                renderSavedQuotes();
+                showToast(showingArchive ? 'Print restored' : 'Print archived','success');
+            } catch(e) { showToast('Could not save archive change','info'); }
+        }
         function renderSavedQuotes() {
-            const quotes = getSavedQuotes();
+            const quotes = showingArchive ? getArchivedQuotes() : getSavedQuotes();
+            document.getElementById("archive-count").textContent = getArchivedQuotes().length;
+            document.getElementById("tab-active-prints").classList.toggle("bg-bambu-500", !showingArchive);
+            document.getElementById("tab-active-prints").classList.toggle("text-white", !showingArchive);
+            document.getElementById("tab-archived-prints").classList.toggle("bg-bambu-500", showingArchive);
+            document.getElementById("tab-archived-prints").classList.toggle("text-white", showingArchive);
             const badge = document.getElementById('saved-count-badge');
             const emptyState = document.getElementById('saved-empty-state');
             const tableWrapper = document.getElementById('saved-table-wrapper');
             const clearBtn = document.getElementById('btn-clear-history');
             const tbody = document.getElementById('saved-quotes-tbody');
 
-            badge.textContent = quotes.length;
+            badge.textContent = getSavedQuotes().length;
 
             if (quotes.length === 0) {
                 emptyState.classList.remove('hidden');
                 tableWrapper.classList.add('hidden');
                 clearBtn.classList.add('hidden');
+                emptyState.querySelector('p').textContent = showingArchive ? 'No archived prints yet' : 'No saved prints yet';
                 return;
             }
 
             emptyState.classList.add('hidden');
             tableWrapper.classList.remove('hidden');
-            clearBtn.classList.remove('hidden');
+            clearBtn.classList.toggle('hidden', showingArchive);
 
             tbody.innerHTML = quotes.map(q => `
                 <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
@@ -1201,6 +1235,7 @@
                         <button onclick="loadSavedQuote(${q.id})" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-bambu-500 hover:text-white transition mr-1">
                             Load
                         </button>
+                        <button onclick="toggleArchiveQuote(${q.id})" class="text-xs font-semibold px-2 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 mr-1">${showingArchive ? 'Restore' : 'Archive'}</button>
                         <button onclick="deleteSavedQuote(${q.id})" aria-label="Delete quote" class="text-xs p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition">
                             <i class="ph-bold ph-trash"></i>
                         </button>

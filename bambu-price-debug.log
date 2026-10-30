@@ -1,11 +1,7 @@
-pla pla-basic Store product data unavailable: HTTP Error 404: Not Found; HTTP Error 404: Not Found
 pla 22.99
 petg petg-hf Store product data unavailable: HTTP Error 404: Not Found; HTTP Error 404: Not Found
 petg petg-hf-filament Store product data unavailable: HTTP Error 404: Not Found; HTTP Error 404: Not Found
 petg petg-basic Store product data unavailable: HTTP Error 404: Not Found; HTTP Error 404: Not Found
 Retaining last verified price for petg
-silk pla-silk-plus Store product data unavailable: HTTP Error 404: Not Found; HTTP Error 404: Not Found
-silk pla-silk Store product data unavailable: HTTP Error 404: Not Found; HTTP Error 404: Not Found
-silk pla-silk-filament Store product data unavailable: HTTP Error 404: Not Found; HTTP Error 404: Not Found
-Retaining last verified price for silk
+silk 24.99
 tpu 38.99

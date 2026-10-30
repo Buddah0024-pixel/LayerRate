@@ -8,7 +8,11 @@
       "source": "https://us.store.bambulab.com/products/pla-basic-filament"
     },
     "petg": null,
-    "silk": null,
+    "silk": {
+      "usd": 24.99,
+      "product": "PLA Silk+",
+      "source": "https://us.store.bambulab.com/products/pla-silk-upgrade"
+    },
     "tpu": {
       "usd": 38.99,
       "product": "TPU for AMS",

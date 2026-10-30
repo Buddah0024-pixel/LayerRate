@@ -103,24 +103,23 @@
 
     <!-- Top Navigation Bar -->
     <header class="sticky top-0 z-30 backdrop-blur-md bg-white/80 dark:bg-carbon-950/80 border-b border-zinc-200 dark:border-zinc-800/80">
-        <div class="max-w-6xl mx-auto px-3 sm:px-6 py-2 sm:py-0 min-h-16 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-bambu-500 to-emerald-700 flex items-center justify-center text-white shadow-lg shadow-bambu-500/20">
-                    <i class="ph-bold ph-cube-focus text-2xl"></i>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h1 class="font-extrabold text-lg tracking-tight leading-none">LayerRate</h1>
-                        <span class="text-[11px] font-mono uppercase px-2 py-0.5 rounded-full bg-bambu-500/15 text-bambu-600 dark:text-bambu-400 font-semibold border border-bambu-500/30">PRO</span>
+        <div class="max-w-6xl mx-auto px-3 sm:px-6 py-2 min-h-16">
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-bambu-500 to-emerald-700 flex items-center justify-center text-white shadow-lg shadow-bambu-500/20">
+                        <i class="ph-bold ph-cube-focus text-2xl"></i>
                     </div>
-                    <p class="text-xs text-zinc-500 dark:text-zinc-400">3D Print Pricing & Profit Engine</p>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <h1 class="font-extrabold text-lg tracking-tight leading-none">LayerRate</h1>
+                            <span class="text-[11px] font-mono uppercase px-2 py-0.5 rounded-full bg-bambu-500/15 text-bambu-600 dark:text-bambu-400 font-semibold border border-bambu-500/30">PRO</span>
+                        </div>
+                        <p class="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-400">3D Print Pricing & Profit Engine</p>
+                    </div>
                 </div>
+                <button id="check-update-button" type="button" onclick="if(window.LayerRateAndroid){window.LayerRateAndroid.checkForUpdates()}else{alert('Update checks are available in the Android app')}" title="Check for LayerRate updates" class="shrink-0 text-[11px] sm:text-xs font-semibold px-2 sm:px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center transition whitespace-nowrap" aria-label="Check for updates">Check Update</button>
             </div>
-
-            <div class="w-full sm:w-auto flex flex-col gap-2 sm:gap-1">
-                <div class="flex justify-end"><button type="button" onclick="if(window.LayerRateAndroid){window.LayerRateAndroid.checkForUpdates()}else{alert('Update checks are available in the Android app')}" title="Check for LayerRate updates" class="text-xs font-semibold px-2 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center transition whitespace-nowrap" aria-label="Check for updates">Check Update</button></div>
-                <div class="w-full flex items-center justify-between sm:justify-end gap-1 sm:gap-3">
-                
+            <div class="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 mt-2">
                 <button onclick="resetToDefaults()" title="Reset all values to defaults" class="text-xs font-medium px-2 sm:px-3 py-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition flex items-center gap-1.5">
                     <i class="ph-bold ph-arrow-counter-clockwise text-sm"></i>
                     <span class="hidden sm:inline">Reset</span>
@@ -133,7 +132,6 @@
                 <button onclick="toggleTheme()" aria-label="Toggle Light/Dark Mode" class="w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center transition">
                     <i id="theme-icon" class="ph-bold ph-sun text-lg text-amber-400"></i>
                 </button>
-                </div>
             </div>
         </div>
     </header>

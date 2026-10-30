@@ -2,7 +2,11 @@
   "currency": "USD",
   "checkedAt": "2026-10-30",
   "prices": {
-    "pla": null,
+    "pla": {
+      "usd": 22.99,
+      "product": "PLA Basic",
+      "source": "https://us.store.bambulab.com/products/pla-basic-filament"
+    },
     "petg": null,
     "silk": null,
     "tpu": {

@@ -46,9 +46,12 @@ getWindow().getDecorView().setOnApplyWindowInsetsListener((view, insets) -> {
 
     new Thread(() -> {
       try {
-        URL url = new URL(BuildConfig.UPDATE_MANIFEST_URL);
+        URL url = new URL(BuildConfig.UPDATE_MANIFEST_URL + (BuildConfig.UPDATE_MANIFEST_URL.contains("?") ? "&" : "?") + "t=" + System.currentTimeMillis());
         if(!url.getProtocol().equals("https")) throw new Exception("HTTPS required");
         HttpURLConnection c = (HttpURLConnection)url.openConnection();
+        c.setUseCaches(false);
+        c.setRequestProperty("Cache-Control", "no-cache, no-store, max-age=0");
+        c.setRequestProperty("Pragma", "no-cache");
         c.setConnectTimeout(10000); c.setReadTimeout(10000);
         if(c.getResponseCode()!=200) throw new Exception("Server error "+c.getResponseCode());
         ByteArrayOutputStream out=new ByteArrayOutputStream();

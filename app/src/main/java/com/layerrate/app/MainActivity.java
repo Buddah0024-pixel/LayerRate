@@ -16,6 +16,21 @@ public class MainActivity extends Activity {
   WebView web;
 
   String pendingUrl;
+  boolean updateAvailable = false;
+  boolean initialResume = true;
+  void showUpdateStatus(boolean available) {
+    updateAvailable = available;
+    if (web != null) {
+      String label = available ? "Update Available" : "Check Update";
+      String js = "(function(){var b=document.getElementById('check-update-button');if(!b)return;b.textContent='" + label + "';b.style.borderColor='" + (available ? "#16a34a" : "") + "';b.style.color='" + (available ? "#16a34a" : "") + "';})()";
+      web.evaluateJavascript(js, null);
+    }
+  }
+  @Override protected void onResume() {
+    super.onResume();
+    if (initialResume) { initialResume = false; return; }
+    checkUpdates(false);
+  }
   @Override public void onCreate(Bundle b) {
     super.onCreate(b);if (Build.VERSION.SDK_INT >= 35) {
     getWindow().setStatusBarContrastEnforced(false);
@@ -32,7 +47,11 @@ getWindow().getDecorView().setOnApplyWindowInsetsListener((view, insets) -> {
     web = new WebView(this);
     web.getSettings().setJavaScriptEnabled(true);
     web.getSettings().setDomStorageEnabled(true);
-    web.setWebViewClient(new WebViewClient());
+    web.setWebViewClient(new WebViewClient() {
+      @Override public void onPageFinished(WebView view, String url) {
+        showUpdateStatus(updateAvailable);
+      }
+    });
     web.addJavascriptInterface(new Object() { @JavascriptInterface public void checkForUpdates() { runOnUiThread(() -> checkUpdates(true)); } }, "LayerRateAndroid");
     web.loadUrl("file:///android_asset/index.html");
     setContentView(web);
@@ -66,7 +85,8 @@ getWindow().getDecorView().setOnApplyWindowInsetsListener((view, insets) -> {
         if(!apk.startsWith("https://")) throw new Exception("APK must use HTTPS");
         runOnUiThread(() -> {
 
-          if(version>BuildConfig.VERSION_CODE) {
+          showUpdateStatus(version > BuildConfig.VERSION_CODE);
+          if(version>BuildConfig.VERSION_CODE && manual) {
             new AlertDialog.Builder(this).setTitle("LayerRate update available")
               .setMessage("Version "+data.optString("versionName","new")+"\n\n"+notes)
               .setNegativeButton("Later",null)

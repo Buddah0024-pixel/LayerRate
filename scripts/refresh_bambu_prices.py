@@ -25,7 +25,7 @@ def lookup(handle):
         name = " ".join(str(v.get(k,"")) for k in ("title","option1","option2","option3")).lower()
         if "refill" in name or "spool" not in name:
             continue
-        if any(x in name for x in ("500g", "0.5kg", "2kg")) or not ("1 kg" in name or "1kg" in name):
+        if any(x in name for x in ("500g", "0.5kg", "2kg")):
             continue
         cents = v.get("price")
         if isinstance(cents, str):

@@ -1,18 +1,36 @@
 import json, urllib.request, datetime, pathlib
-BASE = "https://bambulab-us.myshopify.com"
+BASE = "https://us.store.bambulab.com"
 PRODUCTS = {"pla": ["pla-basic"], "petg": ["petg-hf", "petg-basic"], "silk": ["pla-silk-plus", "pla-silk"], "tpu": ["tpu-for-ams", "tpu-95a-hf"]}
 def lookup(handle):
-    req = urllib.request.Request(BASE + "/products/" + handle + ".js", headers={"User-Agent":"Mozilla/5.0", "Accept":"application/json"})
-    with urllib.request.urlopen(req, timeout=20) as response:
-        data = json.load(response)
+    data = None
+    errors = []
+    for host in ("https://us.store.bambulab.com", "https://bambulab-us.myshopify.com"):
+        for suffix in (".js", ".json"):
+            try:
+                req = urllib.request.Request(host + "/products/" + handle + suffix, headers={"User-Agent":"Mozilla/5.0", "Accept":"application/json"})
+                with urllib.request.urlopen(req, timeout=20) as response:
+                    payload = json.load(response)
+                candidate = payload.get("product", payload)
+                if candidate.get("variants"):
+                    data = candidate
+                    break
+            except Exception as exc:
+                errors.append(str(exc))
+        if data is not None:
+            break
+    if data is None:
+        raise ValueError("Store product data unavailable: " + "; ".join(errors[-2:]))
     values = []
     for v in data.get("variants", []):
         name = " ".join(str(v.get(k,"")) for k in ("title","option1","option2","option3")).lower()
-        if not v.get("available", True) or "refill" in name or "spool" not in name:
+        if "refill" in name or "spool" not in name:
             continue
-        if any(x in name for x in ("500g", "0.5kg", "2kg")):
+        if any(x in name for x in ("500g", "0.5kg", "2kg")) or not ("1 kg" in name or "1kg" in name):
             continue
         cents = v.get("price")
+        if isinstance(cents, str):
+            try: cents = float(cents)
+            except ValueError: cents = None
         if isinstance(cents, (int,float)) and 1000 <= cents <= 15000:
             values.append(round(cents / 100, 2))
     if not values:

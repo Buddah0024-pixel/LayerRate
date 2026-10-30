@@ -23,7 +23,7 @@ def lookup(handle):
     values = []
     for v in data.get("variants", []):
         name = " ".join(str(v.get(k,"")) for k in ("title","option1","option2","option3")).lower()
-        if "refill" in name or "spool" not in name:
+        if "refill" in name or not ("spool" in name or "with spool" in name):
             continue
         if any(x in name for x in ("500g", "0.5kg", "2kg")):
             continue
@@ -34,7 +34,7 @@ def lookup(handle):
         if isinstance(cents, (int,float)) and 1000 <= cents <= 15000:
             values.append(round(cents / 100, 2))
     if not values:
-        raise ValueError("No verified single 1kg spool variant")
+        raise ValueError("No matching spool variant; available options: " + repr([v.get("title") for v in data.get("variants", [])][:20]))
     return {"usd":min(values), "product":data.get("title",handle), "source":BASE + "/products/" + handle}
 path = pathlib.Path("bambu-prices.json")
 old = json.loads(path.read_text())

@@ -376,10 +376,16 @@
                                 </label>
                                 <div class="flex flex-wrap items-center gap-1.5">
                                     <select id="bambu-filament-type" aria-label="Bambu filament type" onchange="applyBambuPrice()" class="text-xs font-semibold px-2 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
-                                        <option value="pla">PLA</option><option value="petg">PETG</option><option value="silk">Silk</option><option value="tpu">TPU</option>
+                                        <option value="pla">PLA · $15.99</option><option value="silk">PLA Silk · $18.99</option><option value="petg">PETG · $13.99</option><option value="rainbow">PLA Rainbow · $17.99</option><option value="silk-rainbow">Silk Rainbow · $17.99</option><option value="multicolor-silk">Multicolor Silk · $16.49</option><option value="tpu">TPU · $20.99</option>
                                     </select>
-                                    <span id="bambu-price-status" class="text-[11px] text-zinc-500 dark:text-zinc-400">Checking US prices...</span>
+                                    <span id="bambu-price-status" class="text-[11px] text-zinc-500 dark:text-zinc-400">Your saved price presets</span>
                                 </div>
+                            </div>
+                            <div class="mt-2 text-xs">
+                                <label class="font-semibold">Same filament for all four nozzles?</label>
+                                <select id="same-filament-all" onchange="toggleNozzleMaterials()" class="ml-2 rounded-lg p-1.5 bg-zinc-100 dark:bg-zinc-800"><option value="yes">Yes</option><option value="no">No</option></select>
+                                <div id="nozzle-materials" class="hidden mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                                <p id="nozzle-material-note" class="mt-1 text-zinc-500 dark:text-zinc-400 hidden">For accurate mixed-filament costs, enter grams used by each nozzle. The total is calculated from those amounts.</p>
                             </div>
                             <div class="flex items-center gap-4">
                                 <input type="range" id="slider-spool-cost" min="8" max="60" step="1" value="20" oninput="syncPair('slider-spool-cost', 'input-spool-cost')" class="flex-grow">
@@ -785,41 +791,33 @@
             calculateAll();
         }
 
-        // Remote price data is independent of Android app releases.
-        const BAMBU_PRICES_URL = 'https://raw.githubusercontent.com/Buddah0024-pixel/LayerRate/main/bambu-prices.json';
-        let bambuPrices = null;
-        let spoolManualOverride = false;
+        // User-defined spool costs; no network price updates.
+        const FILAMENT_PRESETS = {pla:15.99,silk:18.99,petg:13.99,rainbow:17.99,'silk-rainbow':17.99,'multicolor-silk':16.49,tpu:20.99};
+        const FILAMENT_LABELS = {pla:'PLA',silk:'PLA Silk',petg:'PETG',rainbow:'PLA Rainbow','silk-rainbow':'Silk Rainbow','multicolor-silk':'Multicolor Silk',tpu:'TPU'};
         function applyBambuPrice() {
             const type = document.getElementById('bambu-filament-type').value;
-            const entry = bambuPrices && bambuPrices.prices && bambuPrices.prices[type];
-            const status = document.getElementById('bambu-price-status');
-            if (!entry || typeof entry.usd !== 'number' || !(entry.usd > 0)) {
-                status.textContent = 'Price unavailable · enter your cost';
-                return;
-            }
-            spoolManualOverride = false;
-            document.getElementById('input-spool-cost').value = entry.usd.toFixed(2);
-            document.getElementById('slider-spool-cost').value = entry.usd;
-            status.textContent = 'US price checked: ' + (bambuPrices.checkedAt || 'unknown');
+            const cost = FILAMENT_PRESETS[type];
+            document.getElementById('input-spool-cost').value = cost.toFixed(2);
+            document.getElementById('slider-spool-cost').value = cost;
+            document.getElementById('bambu-price-status').textContent = 'Preset price · editable';
             calculateAll();
         }
-        async function refreshBambuPrices() {
-            const status = document.getElementById('bambu-price-status');
-            try {
-                const response = await fetch(BAMBU_PRICES_URL + '?t=' + Date.now(), {cache:'no-store'});
-                if (!response.ok) throw new Error('Price feed unavailable');
-                const data = await response.json();
-                if (data.currency !== 'USD' || !data.prices) throw new Error('Invalid prices');
-                bambuPrices = data;
-                if (!spoolManualOverride) applyBambuPrice();
-                else status.textContent = 'Manual price · US list checked: ' + (data.checkedAt || 'unknown');
-            } catch (e) {
-                status.textContent = 'Price feed unavailable · enter your cost';
+        function toggleNozzleMaterials() {
+            const mixed = document.getElementById('same-filament-all').value === 'no';
+            document.getElementById('nozzle-materials').classList.toggle('hidden',!mixed);
+            document.getElementById('nozzle-material-note').classList.toggle('hidden',!mixed);
+            if(mixed) {
+                const grams = parseFloat(document.getElementById('input-grams').value) || 0;
+                document.querySelectorAll('.nozzle-grams').forEach((el,i)=>{if(!el.value) el.value=i===0?grams:0;});
             }
+            calculateAll();
         }
-        document.getElementById('input-spool-cost').addEventListener('input', () => { spoolManualOverride = true; });
-        document.getElementById('slider-spool-cost').addEventListener('input', () => { spoolManualOverride = true; });
-        refreshBambuPrices();
+        function buildNozzleSelectors() {
+            const options = Object.entries(FILAMENT_LABELS).map(([key,label])=>'<option value="'+key+'">'+label+' · $'+FILAMENT_PRESETS[key].toFixed(2)+'</option>').join('');
+            document.getElementById('nozzle-materials').innerHTML = [1,2,3,4].map(n=>'<div class="p-2 rounded-lg border border-zinc-200 dark:border-zinc-700"><label class="font-semibold">Nozzle '+n+'</label><select aria-label="Nozzle '+n+' filament" class="nozzle-type block w-full mt-1 p-1.5 rounded bg-zinc-100 dark:bg-zinc-800" onchange="calculateAll()">'+options+'</select><label class="block mt-1">Grams used <input aria-label="Nozzle '+n+' grams" type="number" min="0" step="0.1" class="nozzle-grams w-full p-1.5 rounded bg-zinc-100 dark:bg-zinc-800" oninput="calculateAll()" value="'+(n===1?120:0)+'"></label></div>').join('');
+        }
+        buildNozzleSelectors();
+        applyBambuPrice();
 
         function setSpoolCost(cost, btnEl) {
             document.getElementById('input-spool-cost').value = cost;
@@ -894,7 +892,7 @@
             const totalPrintHours = (days * 24) + hours + (minutes / 60);
             const failureMultiplier = 1 + (failurePct / 100);
 
-            const rawFilamentCost = (grams / 1000) * spoolCost;
+            const rawFilamentCost = document.getElementById("same-filament-all").value === "no" ? Array.from(document.querySelectorAll("#nozzle-materials > div")).reduce((sum,row) => sum + ((parseFloat(row.querySelector(".nozzle-grams").value) || 0) / 1000) * FILAMENT_PRESETS[row.querySelector(".nozzle-type").value], 0) : (grams / 1000) * spoolCost;
             const unitMaterialCost = rawFilamentCost * failureMultiplier;
             const unitMachineCost = totalPrintHours * machineRate * failureMultiplier;
             const unitLaborCost = (laborMins / 60) * laborRate;
@@ -1028,6 +1026,9 @@
             document.getElementById('input-qty').value = 1;
             document.getElementById('input-spool-cost').value = 20;
             document.getElementById('slider-spool-cost').value = 20;
+            document.getElementById('same-filament-all').value = 'yes';
+            toggleNozzleMaterials();
+            applyBambuPrice();
             document.getElementById('input-machine-rate').value = '0.25';
             document.getElementById('toggle-round').checked = false;
             applyPricingPreset('standard');

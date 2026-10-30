@@ -600,7 +600,7 @@
                                 </button>
                                 <button type="button" onclick="saveCurrentQuote()" class="py-2.5 px-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 font-semibold text-xs transition flex items-center justify-center gap-1.5">
                                     <i class="ph-bold ph-bookmark-simple text-sm text-bambu-500"></i>
-                                    <span>Save to History</span>
+                                    <span>Save Print</span>
                                 </button>
                             </div>
                         </div>
@@ -1100,6 +1100,13 @@
         function saveCurrentQuote() {
             const quotes = getSavedQuotes();
             const c = latestCalculation;
+            const currentName = document.getElementById('project-name').value.trim();
+            const requestedName = window.prompt('Name this print:', currentName);
+            if (requestedName === null) return;
+            const printName = requestedName.trim();
+            if (!printName) { showToast('Enter a print name before saving.', 'info'); return; }
+            document.getElementById('project-name').value = printName;
+            c.projectName = printName;
             const newEntry = {
                 id: Date.now(),
                 timestamp: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
@@ -1110,7 +1117,7 @@
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(quotes.slice(0, 25)));
             } catch (e) {}
             renderSavedQuotes();
-            showToast(`Saved "${c.projectName}" to history!`, 'success');
+            showToast(`Saved "${c.projectName}"!`, 'success');
         }
 
         function loadSavedQuote(id) {

@@ -1,0 +1,11 @@
+{
+  "currency": "USD",
+  "checkedAt": null,
+  "prices": {
+    "pla": null,
+    "petg": null,
+    "silk": null,
+    "tpu": null
+  },
+  "note": "Prices are unavailable until verified against the Bambu Lab US store. Do not substitute estimated prices."
+}

@@ -683,7 +683,8 @@
         <img id="save-print-preview" class="hidden max-h-40 max-w-full rounded-lg object-contain mb-3" alt="Print photo preview">
         <div class="flex gap-2 justify-end">
           <button type="button" onclick="closeSavePrint()" class="px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-700">Cancel</button>
-          <button type="button" onclick="confirmSavePrint()" class="px-4 py-2 rounded-lg bg-bambu-500 text-white font-bold">Save</button>
+          <button id="overwrite-print-button" type="button" onclick="confirmSavePrint(true)" class="hidden px-4 py-2 rounded-lg bg-amber-600 text-white font-bold">Overwrite</button>
+          <button type="button" onclick="confirmSavePrint(false)" class="px-4 py-2 rounded-lg bg-bambu-500 text-white font-bold">Save New</button>
         </div>
       </div>
     </div>
@@ -700,6 +701,8 @@
         const STORAGE_KEY = 'layerrate_saved_quotes_v1';
         const ARCHIVE_KEY = 'layerrate_archived_quotes_v1';
         let showingArchive = false;
+        let loadedPrintId = null;
+        let loadedPrintArchived = false;
 
         const PRESETS = {
             friend: {
@@ -1143,6 +1146,14 @@
             document.getElementById('save-print-photo').value = '';
             document.getElementById('save-print-preview').classList.add('hidden');
             pendingPrintPhoto = null;
+            const old = loadedPrintId === null ? null : (loadedPrintArchived ? getArchivedQuotes() : getSavedQuotes()).find(q => q.id === loadedPrintId);
+            document.getElementById('overwrite-print-button').classList.toggle('hidden', !old);
+            if (old && old.photo) {
+                pendingPrintPhoto = old.photo;
+                const preview = document.getElementById('save-print-preview');
+                preview.src = old.photo;
+                preview.classList.remove('hidden');
+            }
             document.getElementById('save-print-modal').classList.remove('hidden');
             document.getElementById('save-print-name').focus();
         }
@@ -1174,31 +1185,44 @@
             };
             reader.readAsDataURL(file);
         }
-        function confirmSavePrint() {
+        function confirmSavePrint(overwrite = false) {
             const name = document.getElementById('save-print-name').value.trim();
             if (!name) { showToast('Enter a print name','info'); return; }
             const c = {...latestCalculation,projectName:name};
             const newEntry = {id:Date.now(),timestamp:new Date().toLocaleDateString(undefined,{month:'short',day:'numeric'}),...c,photo:pendingPrintPhoto};
-            const quotes = getSavedQuotes();
-            quotes.unshift(newEntry);
+            const key = overwrite && loadedPrintArchived ? ARCHIVE_KEY : STORAGE_KEY;
+            const quotes = key === ARCHIVE_KEY ? getArchivedQuotes() : getSavedQuotes();
+            if (overwrite) {
+                const index = quotes.findIndex(q => q.id === loadedPrintId);
+                if (index < 0) { showToast('Original saved print not found. Use Save New.','info'); return; }
+                newEntry.id = loadedPrintId;
+                newEntry.timestamp = quotes[index].timestamp;
+                quotes[index] = newEntry;
+            } else {
+                quotes.unshift(newEntry);
+            }
             try {
-                localStorage.setItem(STORAGE_KEY,JSON.stringify(quotes.slice(0,100)));
+                localStorage.setItem(key,JSON.stringify(quotes.slice(0,100)));
             } catch(e) {
                 showToast('Save failed: phone storage is full. Try a smaller photo.','info');
                 return;
             }
             document.getElementById('project-name').value=name;
-            showingArchive=false;
+            loadedPrintId = newEntry.id;
+            loadedPrintArchived = overwrite && key === ARCHIVE_KEY;
+            showingArchive = loadedPrintArchived;
             closeSavePrint();
             renderSavedQuotes();
             document.getElementById('saved-quotes-section').scrollIntoView({behavior:'smooth'});
-            showToast('Saved "'+name+'"!','success');
+            showToast((overwrite ? 'Updated ' : 'Saved ')+ '"' + name + '"!','success');
         }
 
         function loadSavedQuote(id) {
             const quotes = showingArchive ? getArchivedQuotes() : getSavedQuotes();
             const found = quotes.find(q => q.id === id);
             if (!found) return;
+            loadedPrintId = found.id;
+            loadedPrintArchived = showingArchive;
 
             document.getElementById('project-name').value = found.projectName === 'Custom 3D Print' ? '' : found.projectName;
             document.getElementById('input-grams').value = found.grams;
@@ -1223,6 +1247,7 @@
         }
 
         function deleteSavedQuote(id) {
+            if (loadedPrintId === id && loadedPrintArchived === showingArchive) loadedPrintId = null;
             const quotes = (showingArchive ? getArchivedQuotes() : getSavedQuotes()).filter(q => q.id !== id);
             try {
                 localStorage.setItem(showingArchive ? ARCHIVE_KEY : STORAGE_KEY, JSON.stringify(quotes));
@@ -1231,6 +1256,7 @@
         }
 
         function clearAllSavedQuotes() {
+            if (!loadedPrintArchived) loadedPrintId = null;
             try {
                 localStorage.removeItem(STORAGE_KEY);
             } catch (e) {}

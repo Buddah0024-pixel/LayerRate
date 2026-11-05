@@ -147,7 +147,7 @@
                 </span>
                 <span id="preset-status-hint" class="text-xs text-zinc-500 dark:text-zinc-400">Standard 2.0x multiplier + labor</span>
             </div>
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
                 <!-- Friend / At-Cost -->
                 <button type="button" onclick="applyPricingPreset('friend')" id="preset-btn-friend" class="preset-card group text-left p-3.5 rounded-xl border transition-all duration-150 bg-white dark:bg-carbon-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700">
                     <div class="flex items-center justify-between mb-1">
@@ -170,6 +170,18 @@
                         <span class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-bambu-500/15 text-bambu-500 font-semibold">2.0x</span>
                     </div>
                     <p class="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">Covers all costs + hands-on labor + 100% markup.</p>
+                </button>
+
+                <!-- Small Business -->
+                <button type="button" onclick="applyPricingPreset('smallbusiness')" id="preset-btn-smallbusiness" class="preset-card group text-left p-3.5 rounded-xl border transition-all duration-150 bg-white dark:bg-carbon-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold text-sm flex items-center gap-1.5">
+                            <i class="ph-fill ph-briefcase text-amber-400 text-base"></i>
+                            Small Business
+                        </span>
+                        <span class="text-xs font-mono font-bold text-amber-400">2.75x</span>
+                    </div>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Everyday shop sales + hands-on labor + 12% failure buffer.</p>
                 </button>
 
                 <!-- Commercial / Etsy Retail -->
@@ -284,7 +296,7 @@
                                 </div>
                             </div>
                             <div class="relative flex items-baseline">
-                                <input type="number" id="input-labor-mins" value="10" min="0" step="1" oninput="calculateAll()"
+                                <input type="number" id="input-labor-mins" value="20" min="0" step="1" oninput="calculateAll()"
                                     class="w-full bg-transparent font-mono text-2xl font-bold text-zinc-900 dark:text-white focus:outline-none">
                                 <span class="font-mono text-sm font-semibold text-zinc-400 ml-2">mins</span>
                             </div>
@@ -702,6 +714,12 @@
                 failureRate: 10,
                 hint: 'Standard Commission: 2.0x material/machine markup + $20/hr hands-on labor.'
             },
+            smallbusiness: {
+                multiplier: 2.75,
+                laborRate: 20,
+                failureRate: 12,
+                hint: 'Small Business: 2.75x material/machine markup + $20/hr hands-on labor + 12% failure buffer.'
+            },
             commercial: {
                 multiplier: 3.5,
                 laborRate: 25,
@@ -738,7 +756,7 @@
             currentPreset = presetKey;
             const preset = PRESETS[presetKey];
             if (presetKey !== 'custom' && preset) {
-                document.getElementById('input-multiplier').value = preset.multiplier.toFixed(1);
+                document.getElementById('input-multiplier').value = preset.multiplier.toFixed(2);
                 document.getElementById('slider-multiplier').value = preset.multiplier;
                 document.getElementById('input-labor-rate').value = preset.laborRate.toFixed(2);
                 document.getElementById('input-failure-rate').value = preset.failureRate;
@@ -748,7 +766,7 @@
         }
 
         function highlightActivePreset(presetKey) {
-            const buttons = ['friend', 'standard', 'commercial', 'custom'];
+            const buttons = ['friend', 'standard', 'smallbusiness', 'commercial', 'custom'];
             buttons.forEach(key => {
                 const btn = document.getElementById(`preset-btn-${key}`);
                 if (!btn) return;

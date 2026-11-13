@@ -474,7 +474,7 @@
                             </span>
                             <!-- Clean Rounding Toggle -->
                             <label class="inline-flex items-center gap-2 cursor-pointer select-none bg-zinc-800/90 hover:bg-zinc-800 px-2.5 py-1 rounded-full border border-zinc-700 transition">
-                                <input type="checkbox" id="toggle-round" class="sr-only peer" onchange="calculateAll()">
+                                <input type="checkbox" id="toggle-round" checked class="sr-only peer" onchange="calculateAll()">
                                 <div class="w-7 h-4 bg-zinc-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all relative peer-checked:bg-bambu-500"></div>
                                 <span class="text-[11px] font-medium text-zinc-300">Clean $ Round</span>
                             </label>
@@ -1063,7 +1063,7 @@
             document.getElementById('input-days').value = 0;
             document.getElementById('input-hours').value = 4;
             document.getElementById('input-minutes').value = 30;
-            document.getElementById('input-labor-mins').value = 10;
+            document.getElementById('input-labor-mins').value = 20;
             document.getElementById('input-hardware').value = '0.00';
             document.getElementById('input-qty').value = 1;
             document.getElementById('input-spool-cost').value = 20;
@@ -1072,7 +1072,7 @@
             toggleNozzleMaterials();
             applyBambuPrice();
             document.getElementById('input-machine-rate').value = '0.25';
-            document.getElementById('toggle-round').checked = false;
+            document.getElementById('toggle-round').checked = true;
             applyPricingPreset('standard');
             showToast('Reset to standard shop defaults', 'info');
         }
